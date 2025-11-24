@@ -265,10 +265,24 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
                 elif function_name == "get_current_weather":
                     try:
                         city_or_coords = function_args.get("city")
-                        print(f"--- [工具执行] 收到工具调用 (get_current_weather) ---")
+                        print(f"--- [工具执行] 收到工具调用 (get_current_weather) 参数: {city_or_coords} ---")
+                        
+                        # === [新增] 智能 GPS 替换逻辑 ===
+                        # 如果 AI 传来的参数看起来像是在说“这里”，或者参数为空但我们要查天气
+                        # 且我们手头有 GPS 坐标，那就强行使用 GPS。
+                        keywords_for_current_location = ["here", "my place", "current location", "me", "这", "这里", "我"]
+                        
+                        # 检查条件: 
+                        # 1. 如果参数完全包含在关键词里 (比如 AI 说 city="here")
+                        # 2. 或者我们有 GPS，但 AI 传了个空值
+                        if user_location_string and (not city_or_coords or any(k in str(city_or_coords).lower() for k in keywords_for_current_location)):
+                             print(f"--- [工具优化] 检测到用户是在问本地天气，自动替换为 GPS: {user_location_string} ---")
+                             city_or_coords = user_location_string
+                        # ================================
+
                         tool_result_content = get_current_weather(city_or_coords)
                     except Exception as e: tool_result_content = f"执行天气查询时发生错误: {str(e)}"
-
+                        
                 elif function_name == "get_weather_for_current_location":
                     try:
                         print(f"--- [工具执行] 收到工具调用 (get_weather_for_current_location) ---")
@@ -325,4 +339,5 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         print(f"--- [聊天错误] 在 get_ai_chat_response 中捕获到未知异常: {e} ---")
         import traceback
         traceback.print_exc()
+
         return f"抱歉，AI 代理在处理时遇到了一个错误。请检查服务器日志获取详细信息。错误: {str(e)}"
