@@ -2,7 +2,7 @@
 from flask import Flask
 
 # 从配置导入
-
+import config
 
 # 导入蓝图
 from routes.main import main_bp
@@ -25,3 +25,4 @@ if __name__ == '__main__':
     # 确保在 127.0.0.1 (本地) 运行，端口 5000，开启调试模式
 
     app.run('0.0.0.0', 5000, debug=True)
+
