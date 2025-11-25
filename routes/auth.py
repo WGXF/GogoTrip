@@ -12,11 +12,14 @@ auth_bp = Blueprint('auth', __name__)
 def authorize():
     flow = Flow.from_client_secrets_file(
         config.CLIENT_SECRETS_FILE, scopes=config.SCOPES)
-    # _external=True 很重要，因为它会生成包含域名的完整 URL
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
+    
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        include_granted_scopes='true')
+        include_granted_scopes='true',
+        prompt='consent'  # <---【关键修改】添加这一行，强制显示同意屏幕
+    )
+    
     session['state'] = state
     return redirect(authorization_url)
 
@@ -38,4 +41,5 @@ def oauth2callback():
 def revoke():
     session.pop('credentials', None)
     session['message'] = "您已成功断开与 Google 日历的连接。"
+
     return redirect(url_for('main.index'))
