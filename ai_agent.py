@@ -4,6 +4,8 @@ import datetime
 # [修改] 移除 Groq，导入 Gemini
 # from groq import Groq 
 import google.generativeai as genai
+import sys
+import logging
 
 # 从配置导入
 import config
@@ -11,6 +13,29 @@ import config
 from tools import get_ip_location_info, get_current_weather, search_nearby_places, get_coordinates_for_city
 # 从日历逻辑导入
 from google_calendar import get_event_details_from_ai, execute_google_calendar_batch
+
+# 配置日志记录到文件 'app.log'
+logging.basicConfig(
+    filename='app.log', 
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    encoding='utf-8' # 防止中文乱码
+)
+
+# [可选] 让 print() 语句也自动写入日志文件
+class LoggerWriter:
+    def __init__(self, level):
+        self.level = level
+    def write(self, message):
+        if message.strip():
+            self.level(message)
+    def flush(self):
+        pass
+
+sys.stdout = LoggerWriter(logging.info)
+sys.stderr = LoggerWriter(logging.error)
+
+print("--- 日志系统已启动，正在写入 app.log ---")
 
 # [修改] Gemini 的工具定义 (tools_definition)
 # Gemini 期望的格式是一个简单的字典列表，不带 "type": "function" 包装
@@ -341,3 +366,4 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         traceback.print_exc()
 
         return f"抱歉，AI 代理在处理时遇到了一个错误。请检查服务器日志获取详细信息。错误: {str(e)}"
+
