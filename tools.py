@@ -87,30 +87,37 @@ def get_coordinates_for_city(city_name: str) -> str:
         return f"处理 Geocoding API 结果时发生未知错误: {e}"
 
 # --- [新增] 工具 3：Google Places API 地点搜索 ---
+# tools.py
+# (请确保文件顶部有 import requests, json, config)
+
 def search_nearby_places(query: str, location: str, rank_by: str = "prominence", radius: int = 5000) -> str:
     """
-    [最终完美版 - 两步法]
-    遵循 Google 官方建议流程：
-    Step 1: searchText 找出地点 ID (避免 FieldMask 冲突)。
-    Step 2: 使用 place.id 调用 Place Details 获取完整信息 (评论、营业时间、价格等)。
+    [最终稳健版 - v1.4]
+    Step 1: searchText 获取 ID (成功)
+    Step 2: Place Details 获取详情 (修复了 400 错误)
+    - 移除了不稳定的字段 (accessibility, delivery 等)
+    - 保留了核心字段 (评论, 营业时间, 价格)
+    - 使用 URL 参数 'fields' 传递字段掩码
     """
+    import json
+    import requests
+    import config
+
     if not config.GOOGLE_MAPS_API_KEY or config.GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY":
         return "错误：Google Maps API 密钥未在 config.py 中配置。"
 
-    print(f"--- TOOL CALLED: search_nearby_places (Two-Step Official) ---")
+    print(f"--- TOOL CALLED: search_nearby_places (v1.4 Stable) ---")
     print(f"    Query: {query}")
     print(f"    Location: {location}")
 
     # ==========================================
-    # Step 1: searchText (只获取 ID)
+    # Step 1: searchText (获取 ID) - 已验证成功
     # ==========================================
     search_url = "https://places.googleapis.com/v1/places:searchText"
-    
-    # [!] Step 1 Header: 必须包含 Content-Type (POST请求)
     search_headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY,
-        "X-Goog-Fieldmask": "places.id" # 只请求 ID，最安全
+        "X-Goog-Fieldmask": "places.id"
     }
 
     try:
@@ -127,13 +134,14 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
             }
         },
         "languageCode": "zh-CN",
-        "maxResultCount": 3 # 限制为 3 个结果
+        "maxResultCount": 3
     }
-
+    
+    # 增加排序逻辑
     if rank_by == "distance":
          search_payload["rankPreference"] = "DISTANCE"
     else:
-        search_payload["rankPreference"] = "RELEVANCE" 
+        search_payload["rankPreference"] = "RELEVANCE"
 
     place_ids = []
     try:
@@ -142,78 +150,76 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
         response.raise_for_status() 
         data = response.json()
 
-        if not data.get("places"):
-            return json.dumps({"message": f"在您附近未能找到与 '{query}' 相关的地点。"})
+        places_found = data.get("places", [])
+        if not places_found:
+            return json.dumps({"message": f"在您附近未能找到与 '{query}' 相关的地点。"}, ensure_ascii=False)
         
-        for place in data.get("places", []):
-            if place.get("id"):
-                place_ids.append(place.get("id"))
+        for p in places_found:
+            if p.get("id"):
+                place_ids.append(p.get("id"))
 
-        if not place_ids:
-            return json.dumps({"message": f"找到了地点，但未能获取它们的 ID。"})
+        print(f"--- [Step 1 完成] 获取到 {len(place_ids)} 个 ID ---")
 
-    except requests.exceptions.HTTPError as e:
-        return f"Step 1 (搜索) 失败: {e}"
     except Exception as e:
-        return f"Step 1 (搜索) 未知错误: {e}"
+        return f"Step 1 (搜索) 失败: {e}"
 
     
     # ==========================================
-    # Step 2: Place Details (获取详细信息)
+    # Step 2: Place Details (获取详情) - 修复重点
     # ==========================================
-    print(f"--- [Step 2] 获取了 {len(place_ids)} 个 ID，正在获取详情... ---")
+    print(f"--- [Step 2] 正在获取详情... ---")
 
-    # [!] 这里定义我们需要的所有详细字段
-    details_field_mask = (
-        "displayName,formattedAddress,rating,priceLevel,location,"
+    # [!!! 修复 !!!] 只请求最核心、最安全的字段
+    # 移除了 accessibilityOptions, delivery, dineIn 等容易报错的字段
+    safe_fields = (
+        "id,displayName,formattedAddress,rating,priceLevel,location,"
         "businessStatus,openingHours,formattedPhoneNumber,websiteUri,"
-        "reviews,accessibilityOptions," # 获取无障碍父对象
-        "delivery,dineIn,servesVegetarianFood"
+        "reviews" # <--- 依然包含评论！
     )
     
-    # [!] Step 2 Header: 这是一个 GET 请求，绝对不能有 Content-Type!
-    details_headers = {
-        "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY,
-        "X-Goog-Fieldmask": details_field_mask
-    }
-
     results = []
     
+    # Header 只放 API Key
+    details_headers = {
+        "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY
+    }
+
     for place_id in place_ids:
         details_url = f"https://places.googleapis.com/v1/places/{place_id}"
         
+        # [!!! 修复 !!!] 使用 params 传递 fields，而不是 Header
+        params = {
+            "fields": safe_fields,
+            "languageCode": "zh-CN"
+        }
+
         try:
-            # print(f"    正在获取详情: {place_id} ...")
-            # 发送 GET 请求
-            response = requests.get(details_url, headers=details_headers, params={"languageCode": "zh-CN"}, timeout=10)
-            response.raise_for_status()
+            # print(f"    正在获取 {place_id} ...")
+            response = requests.get(details_url, headers=details_headers, params=params, timeout=10)
+            
+            # 如果这里报错，打印出来但不要崩溃
+            if response.status_code != 200:
+                print(f"    [错误] 获取 ID {place_id} 失败: {response.status_code} - {response.text}")
+                continue
+
             place = response.json()
 
-            # --- 数据解析与清洗 ---
+            # --- 数据解析 ---
             open_hours_data = place.get("openingHours", {})
-            access_data = place.get("accessibilityOptions", {})
             
-            # 提取评论 (最多3条)
+            # 提取评论
             review_list = []
             if place.get("reviews"):
                 for review in place.get("reviews", [])[:3]:
-                    # v1 API 评论结构通常是 review['text']['text']
                     txt = review.get("text", {}).get("text", "")
                     if txt:
                         review_list.append(txt)
-                    else:
-                        review_list.append("暂无文字评论")
-            
             if not review_list:
-                review_list = ["N/A"]
+                review_list = ["暂无评论"]
 
-            # 构建符合前端 templates.py 要求的 JSON 结构
             clean_details = {
                 "name": place.get("displayName", {}).get("text", "未知名称"),
-                
-                # [修复] 变量名改成 'address'，之前写成 'vicinity' 导致前端不显示
-                "address": place.get("formattedAddress", "未知地址"), 
-                
+                "address": place.get("formattedAddress", "未知地址"),
                 "rating": place.get("rating", "N/A"),
                 "business_status": place.get("businessStatus", "N/A"),
                 "is_open_now": open_hours_data.get("openNow", "未知"),
@@ -223,25 +229,23 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
                 "price_level": place.get("priceLevel", "N/A"),
                 "coordinates": place.get("location", {}),
                 
-                # 对象结构匹配前端
-                "accessibility": {
-                    "wheelchair_accessible": access_data.get("wheelchairAccessibleEntrance", "未知")
-                },
+                # 设置默认值 (因为我们不再请求这些字段以避免报错)
+                "accessibility": {"wheelchair_accessible": "未知"},
                 "service_attributes": {
-                    "delivery": place.get("delivery", "未知"),
-                    "dine_in": place.get("dineIn", "未知"),
-                    "serves_vegetarian_food": place.get("servesVegetarianFood", "未知")
+                    "delivery": "未知",
+                    "dine_in": "未知",
+                    "serves_vegetarian_food": "未知"
                 },
+                
                 "review_list": review_list
             }
             results.append(clean_details)
         
         except Exception as e:
-            print(f"    获取 ID {place_id} 详情失败，跳过: {e}")
+            print(f"    [异常] 处理 ID {place_id} 时出错: {e}")
             continue
 
     if not results:
-        return json.dumps({"message": "成功获取ID，但获取详情全部失败。"})
+        return json.dumps({"message": "成功获取ID，但获取详情全部失败。"}, ensure_ascii=False)
 
-    # 返回最终 JSON
     return json.dumps(results, ensure_ascii=False)
