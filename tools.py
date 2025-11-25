@@ -90,11 +90,14 @@ def get_coordinates_for_city(city_name: str) -> str:
 # tools.py
 # (请确保文件顶部有 import requests, json, config)
 
+# tools.py
+# (请确保文件顶部有 import requests, json, config)
+
 def search_nearby_places(query: str, location: str, rank_by: str = "prominence", radius: int = 5000) -> str:
     """
-    [最终修复版 - v1.5]
-    修复了 'openingHours' 字段错误。
-    Google Places API v1 的正确字段名是 'regularOpeningHours'。
+    [最终修复版 - v1.6]
+    修复了 'formattedPhoneNumber' 字段错误。
+    Google Places API v1 的正确字段名是 'nationalPhoneNumber'。
     """
     import json
     import requests
@@ -103,7 +106,7 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
     if not config.GOOGLE_MAPS_API_KEY or config.GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY":
         return "错误：Google Maps API 密钥未在 config.py 中配置。"
 
-    print(f"--- TOOL CALLED: search_nearby_places (v1.5 Fix) ---")
+    print(f"--- TOOL CALLED: search_nearby_places (v1.6 Fix) ---")
 
     # ==========================================
     # Step 1: searchText (获取 ID)
@@ -159,10 +162,12 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
     # ==========================================
     print(f"--- [Step 2] 正在获取详情... ---")
 
-    # [!!! 修复 !!!] 将 'openingHours' 改为 'regularOpeningHours'
+    # [!!! 修复 !!!] 
+    # 1. regularOpeningHours (之前已修)
+    # 2. nationalPhoneNumber (现在修复，替代 formattedPhoneNumber)
     safe_fields = (
         "id,displayName,formattedAddress,rating,priceLevel,location,"
-        "businessStatus,regularOpeningHours,formattedPhoneNumber,websiteUri,"
+        "businessStatus,regularOpeningHours,nationalPhoneNumber,websiteUri,"
         "reviews"
     )
     
@@ -188,7 +193,7 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
 
             place = response.json()
 
-            # [!!! 修复 !!!] 从 'regularOpeningHours' 提取数据
+            # 解析数据
             open_hours_data = place.get("regularOpeningHours", {})
             
             # 提取评论
@@ -206,12 +211,12 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
                 "address": place.get("formattedAddress", "未知地址"),
                 "rating": place.get("rating", "N/A"),
                 "business_status": place.get("businessStatus", "N/A"),
-                
-                # 营业时间数据
                 "is_open_now": open_hours_data.get("openNow", "未知"),
                 "opening_hours_weekday": open_hours_data.get("weekdayDescriptions", []),
                 
-                "phone": place.get("formattedPhoneNumber", "N/A"),
+                # [!!! 修复 !!!] 使用 nationalPhoneNumber
+                "phone": place.get("nationalPhoneNumber", "N/A"),
+                
                 "website": place.get("websiteUri", "N/A"),
                 "price_level": place.get("priceLevel", "N/A"),
                 "coordinates": place.get("location", {}),
@@ -236,3 +241,4 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
         return json.dumps({"message": "成功获取ID，但获取详情全部失败。"}, ensure_ascii=False)
 
     return json.dumps(results, ensure_ascii=False)
+
