@@ -132,7 +132,7 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
             }
         },
         "languageCode": "zh-CN",
-        "maxResultCount": 3,
+        "maxResultCount": 10,
         "rankPreference": "RELEVANCE" if rank_by != "distance" else "DISTANCE"
     }
 
@@ -241,4 +241,5 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
         return json.dumps({"message": "成功获取ID，但获取详情全部失败。"}, ensure_ascii=False)
 
     return json.dumps(results, ensure_ascii=False)
+
 
