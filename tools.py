@@ -95,33 +95,37 @@ def get_coordinates_for_city(city_name: str) -> str:
 
 def search_nearby_places(query: str, location: str, rank_by: str = "prominence", radius: int = 5000) -> str:
     """
-    [最终修复版 - v1.6]
-    修复了 'formattedPhoneNumber' 字段错误。
-    Google Places API v1 的正确字段名是 'nationalPhoneNumber'。
+    [v2.0 性能优化版]
+    利用 FieldMask 一次性获取所有详情，移除 N+1 次循环调用。
     """
-    import json
-    import requests
-    import config
-
     if not config.GOOGLE_MAPS_API_KEY or config.GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY":
         return "错误：Google Maps API 密钥未在 config.py 中配置。"
 
-    print(f"--- TOOL CALLED: search_nearby_places (v1.6 Fix) ---")
+    print(f"--- TOOL CALLED: search_nearby_places (v2.0 Optimized) ---")
 
     # ==========================================
-    # Step 1: searchText (获取 ID)
+    # Step 1: SearchText (一次性获取 ID 和 详情)
     # ==========================================
     search_url = "https://places.googleapis.com/v1/places:searchText"
+    
+    # 在这里直接指定所有需要的字段
+    field_mask = (
+        "places.id,places.displayName,places.formattedAddress,places.rating,"
+        "places.priceLevel,places.location,places.businessStatus,"
+        "places.regularOpeningHours,places.nationalPhoneNumber,"
+        "places.websiteUri,places.photos,places.reviews"
+    )
+
     search_headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY,
-        "X-Goog-Fieldmask": "places.id"
+        "X-Goog-Fieldmask": field_mask
     }
 
     try:
         lat, lon = map(float, location.split(','))
     except (ValueError, AttributeError):
-        return f"错误：位置参数 '{location}' 格式不正确或不是有效字符串。必须是 '纬度,经度'。"
+        return f"错误：位置参数 '{location}' 格式不正确。必须是 '纬度,经度'。"
 
     search_payload = {
         "textQuery": query,
@@ -136,9 +140,8 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
         "rankPreference": "RELEVANCE" if rank_by != "distance" else "DISTANCE"
     }
 
-    place_ids = []
     try:
-        print("--- [Step 1] 正在搜索地点 ID... ---")
+        print("--- [Step 1] 正在搜索并获取详情... ---")
         response = requests.post(search_url, headers=search_headers, data=json.dumps(search_payload), timeout=10)
         response.raise_for_status() 
         data = response.json()
@@ -147,99 +150,58 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
         if not places_found:
             return json.dumps({"message": f"在您附近未能找到与 '{query}' 相关的地点。"}, ensure_ascii=False)
             
-        for p in places_found:
-            if p.get("id"):
-                place_ids.append(p.get("id"))
+        # ==========================================
+        # 直接解析数据 (不再需要 Step 2)
+        # ==========================================
+        results = []
+        for place in places_found:
+            try:
+                # 1. 解析营业时间
+                open_hours_data = place.get("regularOpeningHours", {})
+                
+                # 2. 解析评论 (取前3条)
+                review_list = []
+                if place.get("reviews"):
+                    for review in place.get("reviews", [])[:3]:
+                        txt = review.get("text", {}).get("text", "")
+                        if txt:
+                            review_list.append(txt)
+                if not review_list:
+                    review_list = ["暂无评论"]
+
+                # 3. 提取照片 ID
+                photo_ref = "N/A"
+                photos = place.get("photos", [])
+                if photos:
+                    photo_ref = photos[0].get("name", "N/A")
+
+                # 4. 构建整洁的字典
+                clean_details = {
+                    "name": place.get("displayName", {}).get("text", "未知名称"),
+                    "address": place.get("formattedAddress", "未知地址"),
+                    "rating": place.get("rating", "N/A"),
+                    "business_status": place.get("businessStatus", "N/A"),
+                    "is_open_now": open_hours_data.get("openNow", "未知"),
+                    "opening_hours_weekday": open_hours_data.get("weekdayDescriptions", []),
+                    "phone": place.get("nationalPhoneNumber", "N/A"),
+                    "website": place.get("websiteUri", "N/A"),
+                    "price_level": place.get("priceLevel", "N/A"),
+                    "coordinates": place.get("location", {}),
+                    "photo_reference": photo_ref,
+                    "review_list": review_list
+                }
+                results.append(clean_details)
+            except Exception as e:
+                print(f"解析单个地点出错: {e}")
+                continue
         
-        print(f"--- [Step 1 完成] 获取到 {len(place_ids)} 个 ID ---")
+        print(f"--- [完成] 成功处理 {len(results)} 个地点 ---")
+        return json.dumps(results, ensure_ascii=False)
 
     except Exception as e:
-        return f"Step 1 (搜索) 失败: {e}"
+        return f"搜索地点时发生错误: {e}"
 
-    
-    # ==========================================
-    # Step 2: Place Details (获取详情)
-    # ==========================================
-    print(f"--- [Step 2] 正在获取详情... ---")
 
-    # [!!! 修复 !!!] 
-    # 1. regularOpeningHours (之前已修)
-    # 2. nationalPhoneNumber (现在修复，替代 formattedPhoneNumber)
-    safe_fields = (
-        "id,displayName,formattedAddress,rating,priceLevel,location,"
-        "businessStatus,regularOpeningHours,nationalPhoneNumber,websiteUri,"
-        "reviews"
-    )
-    
-    details_headers = {
-        "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY
-    }
 
-    results = []
-    
-    for place_id in place_ids:
-        details_url = f"https://places.googleapis.com/v1/places/{place_id}"
-        params = {
-            "fields": safe_fields,
-            "languageCode": "zh-CN"
-        }
-
-        try:
-            response = requests.get(details_url, headers=details_headers, params=params, timeout=10)
-            
-            if response.status_code != 200:
-                print(f"    [错误] 获取 ID {place_id} 失败: {response.status_code} - {response.text}")
-                continue
-
-            place = response.json()
-
-            # 解析数据
-            open_hours_data = place.get("regularOpeningHours", {})
-            
-            # 提取评论
-            review_list = []
-            if place.get("reviews"):
-                for review in place.get("reviews", [])[:3]:
-                    txt = review.get("text", {}).get("text", "")
-                    if txt:
-                        review_list.append(txt)
-            if not review_list:
-                review_list = ["暂无评论"]
-
-            clean_details = {
-                "name": place.get("displayName", {}).get("text", "未知名称"),
-                "address": place.get("formattedAddress", "未知地址"),
-                "rating": place.get("rating", "N/A"),
-                "business_status": place.get("businessStatus", "N/A"),
-                "is_open_now": open_hours_data.get("openNow", "未知"),
-                "opening_hours_weekday": open_hours_data.get("weekdayDescriptions", []),
-                
-                # [!!! 修复 !!!] 使用 nationalPhoneNumber
-                "phone": place.get("nationalPhoneNumber", "N/A"),
-                
-                "website": place.get("websiteUri", "N/A"),
-                "price_level": place.get("priceLevel", "N/A"),
-                "coordinates": place.get("location", {}),
-                
-                # 默认值
-                "accessibility": {"wheelchair_accessible": "未知"},
-                "service_attributes": {
-                    "delivery": "未知",
-                    "dine_in": "未知",
-                    "serves_vegetarian_food": "未知"
-                },
-                
-                "review_list": review_list
-            }
-            results.append(clean_details)
-        
-        except Exception as e:
-            print(f"    [异常] 处理 ID {place_id} 时出错: {e}")
-            continue
-
-    if not results:
-        return json.dumps({"message": "成功获取ID，但获取详情全部失败。"}, ensure_ascii=False)
-
-    return json.dumps(results, ensure_ascii=False)
 
 
