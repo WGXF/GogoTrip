@@ -51,3 +51,10 @@ def check_login():
         return jsonify({"logged_in": True})
     else:
         return jsonify({"logged_in": False})
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    # 清除 session 中的凭证
+    session.pop('credentials', None)
+    session.clear() # 彻底清除所有 session 数据
+    return jsonify({"status": "success", "message": "Logged out successfully"}
