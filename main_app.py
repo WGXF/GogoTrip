@@ -19,6 +19,7 @@ from routes.tts import tts_bp
 
 # 初始化 Flask 应用
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config.from_object(config)
 app.secret_key = config.FLASK_SECRET_KEY
 
@@ -84,4 +85,5 @@ with app.app_context():
 if __name__ == '__main__':
     # 确保在 0.0.0.0 运行，以便局域网也能访问
     print("应用正在启动: http://127.0.0.1:5000")
+
     app.run('0.0.0.0', 5000, debug=True)
