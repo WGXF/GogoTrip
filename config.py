@@ -35,6 +35,7 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD") # 务必在 .env 中设置应用专�
 # --- CORS Allowed Origins (新增) ---
 ALLOWED_ORIGINS = [
     "https://gogotrip.teocodes.com/",
+    "https://info.gogotrip.teocodes.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://192.168.0.100:3000", # 如果你需要局域网测试
@@ -50,5 +51,6 @@ SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email',
     'openid'
 ]
+
 
 TIMEZONE = os.getenv("TIMEZONE", "Asia/Kuala_Lumpur")
