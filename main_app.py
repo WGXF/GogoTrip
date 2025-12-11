@@ -1,5 +1,6 @@
 # main_app.py
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS  # 1. 必须导入 CORS
 from flask_admin import Admin  # 1. 导入
 from flask_admin.contrib.sqla import ModelView
@@ -87,3 +88,4 @@ if __name__ == '__main__':
     print("应用正在启动: http://127.0.0.1:5000")
 
     app.run('0.0.0.0', 5000, debug=True)
+
