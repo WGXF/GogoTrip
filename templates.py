@@ -1,13 +1,12 @@
 # templates.py
 
-# (将您原来的 HOME_PAGE_TEMPLATE 字符串完整复制到这里)
 HOME_PAGE_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 日程助手</title>
+    <title>AI 助手</title>
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
         h1, h2 { color: #333; }
@@ -77,7 +76,7 @@ HOME_PAGE_TEMPLATE = """
             height: 1.2em;
         }
 
-        /* [!!! 新增：Popup (Modal) 样式 !!!] */
+        /* [!!! Popup (Modal) 样式 - 保留用于地点搜索结果 !!!] */
         .modal {
             display: none; /* 默认隐藏 */
             position: fixed; 
@@ -134,51 +133,24 @@ HOME_PAGE_TEMPLATE = """
             font-weight: bold;
             color: #28a745;
         }
-        /* [!!! 新增结束 !!!] */
+        /* [!!! Popup 样式结束 !!!] */
 
     </style>
 </head>
 <body>
-    <h1>FYP3628</h1>
+    <h1>AI 助手 (仅聊天和地点/天气)</h1>
 
-    {% if credentials_in_session %}
-
-        <h2>1. AI 助手 (主功能)</h2>
-        <div id="chat-container">
-            <div class="chat-message model-message">
-                你好！我是您的助手。您可以对我说：“帮我创建明天的会议”或“今天的天气怎么样？”
-            </div>
+    <h2>AI 助手</h2>
+    <div id="chat-container">
+        <div class="chat-message model-message">
+            你好！我是您的地点和天气助手。您可以对我说：“吉隆坡附近有什么好吃的？”或“今天的天气怎么样？”
         </div>
-        <div id="chat-status"></div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="输入消息...">
-            <button id="send-button">发送</button>
-        </div>
-        <hr style="margin-top: 40px; margin-bottom: 40px;">
-
-        <h2>2. 批量创建日程 (工具)</h2>
-        <p>请粘贴完整的日程安排 (例如: "明天下午3点开会，周五早上10点见客户"):</p>
-        <form action="/create_event" method="post">
-            <textarea name="user_prompt" rows="4" required></textarea>
-            <br><br>
-            <input type="submit" value="让 AI 批量创建">
-        </form>
-
-        {% if message %}
-            <div class="status-box {{ 'success' if '成功' in message else 'error' }}">
-                {{ message | safe }}
-            </div>
-        {% endif %}
-
-        <hr style="margin-top: 40px;">
-        <h2>3. 其他</h2>
-        <p><a href="/list_events">查看接下来的10个日程</a></p>
-        <p><a href="/revoke">断开 Google 日历连接</a></p>
-
-    {% else %}
-        <p>请先连接您的 Google 日历以开始使用。</p>
-        <a href="/authorize">连接您的 Google 日历</a>
-    {% endif %}
+    </div>
+    <div id="chat-status"></div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="输入消息...">
+        <button id="send-button">发送</button>
+    </div>
 
     <div id="places-modal" class="modal">
         <div class="modal-content">
@@ -197,16 +169,16 @@ HOME_PAGE_TEMPLATE = """
             let conversationHistory = [];
             let userCoordinates = null;
 
-            // [!!! 新增：Modal 变量 !!!]
+            // [!!! Modal 变量 !!!]
             const modal = document.getElementById('places-modal');
             const modalBody = document.getElementById('modal-body');
             const closeModal = document.getElementsByClassName('close-button')[0];
-            // [!!! 新增结束 !!!]
+            // [!!! Modal 变量结束 !!!]
 
 
             conversationHistory.push({
                 'role': 'model',
-                'parts': ['你好！我是您的助手。您可以对我说：“帮我创建明天的会议”或“今天的天气怎么样？”']
+                'parts': ['你好！我是您的地点和天气助手。您可以对我说：“吉隆坡附近有什么好吃的？”或“今天的天气怎么样？”']
             });
 
             function getGeolocation() {
@@ -247,7 +219,7 @@ HOME_PAGE_TEMPLATE = """
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
-            // [!!! 新增：关闭 Modal 的逻辑 !!!]
+            // [!!! 关闭 Modal 的逻辑 !!!]
             closeModal.onclick = function() {
                 modal.style.display = "none";
             }
@@ -257,7 +229,7 @@ HOME_PAGE_TEMPLATE = """
                 }
             }
             
-            // [!!! 新增：用于构建和显示 Popup 的函数 !!!]
+            // [!!! 用于构建和显示 Popup 的函数 - 保留 !!!]
             function displayPlacesPopup(places) {
                 // 1. 清空旧内容
                 modalBody.innerHTML = ''; 
@@ -312,7 +284,7 @@ HOME_PAGE_TEMPLATE = """
             }
 
 
-            // [!!! 修改：sendMessage 函数 !!!]
+            // [!!! 修改：sendMessage 函数 - 移除 history 中的 credentials_dict !!!]
             async function sendMessage() {
                 const message = chatInput.value.trim();
                 if (!message) return;
@@ -329,6 +301,7 @@ HOME_PAGE_TEMPLATE = """
                             message: message,
                             history: conversationHistory,
                             coordinates: userCoordinates
+                            // 移除 credentials_dict
                         })
                     });
                     if (!response.ok) {

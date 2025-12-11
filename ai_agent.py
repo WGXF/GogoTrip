@@ -1,18 +1,15 @@
 # ai_agent.py
 import json
 import datetime
-# [修改] 移除 Groq，导入 Gemini
-# from groq import Groq 
 import google.generativeai as genai
 import sys
 import logging
 
 # 从配置导入
 import config
-# 从外部工具导入
+# 从外部工具导入 (保留所有非日历的工具)
 from tools import get_ip_location_info, get_current_weather, search_nearby_places, get_coordinates_for_city
-# 从日历逻辑导入
-from google_calendar import get_event_details_from_ai, execute_google_calendar_batch
+# from google_calendar import get_event_details_from_ai, execute_google_calendar_batch # 移除日历导入
 
 # 配置日志记录到文件 'app.log'
 logging.basicConfig(
@@ -37,27 +34,23 @@ sys.stderr = LoggerWriter(logging.error)
 
 print("--- 日志系统已启动，正在写入 app.log ---")
 
-# [修改] Gemini 的工具定义 (tools_definition)
-# Gemini 期望的格式是一个简单的字典列表，不带 "type": "function" 包装
-# ai_agent.py
-
-# [已完全修复] Gemini 的工具定义 (tools_definition)
-# 移除了所有 parameters 字典中的顶层 "type": "object"
+# [修改] Gemini 的工具定义 (tools_definition) - 移除 create_calendar_events_from_prompt
 tools_definition = [
-    {
-        "name": "create_calendar_events_from_prompt",
-        "description": "当用户确认了推荐的地点并要求安排日程时...",
-        "parameters": {
-            "type": "OBJECT",  # [修复] 必须大写
-            "properties": {
-                "user_prompt": {
-                    "type": "STRING",  # [修复] 必须大写
-                    "description": "构造的自然语言日程请求..."
-                }
-            }, 
-            "required": ["user_prompt"]
-        }
-    },
+    # 移除 create_calendar_events_from_prompt 工具定义
+    # {
+    #     "name": "create_calendar_events_from_prompt",
+    #     "description": "当用户确认了推荐的地点并要求安排日程时...",
+    #     "parameters": {
+    #         "type": "OBJECT",  # [修复] 必须大写
+    #         "properties": {
+    #             "user_prompt": {
+    #                 "type": "STRING",  # [修复] 必须大写
+    #                 "description": "构造的自然语言日程请求..."
+    #             }
+    #         }, 
+    #         "required": ["user_prompt"]
+    #     }
+    # },
     {
         "name": "search_nearby_places",
         "description": "当用户询问附近的地点推荐时调用...",
@@ -120,6 +113,7 @@ tools_definition = [
 # ... (imports 和 tools_definition 已修改) ...
 
 # [修改] AI 代理 - 升级为 Gemini API 和“循环思考”模式
+# 移除 credentials_dict 参数，因为不再需要 Google 凭据
 def get_ai_chat_response(conversation_history, credentials_dict, coordinates=None, user_ip=None):
     """
     【AI 代理已激活 - 智能拦截版】
@@ -143,21 +137,29 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
             f"**用户上下文:** {location_info_for_prompt}\n\n"
             "**[!!! 风格指南 (新) !!!]**\n"
             "1. **表情符号:** 在回复中适当使用表情符号 (emoji) 来使对话更友好、更生动。例如：📍 🍜 🏛️ 🌳 🌙。\n"
-            "2. **格式化:** *不要* 使用 Markdown 的 `**` 来加粗文本。使用普通的文本进行回复。\n\n"
-            "**[!!! 关键工作流程 !!!]**\n"
-            "1. **地点搜索 (两步流程):**\n"
-            "   - **如果用户提供城市名 (例如 'KL', '吉隆坡'):** 你必须 *首先* 调用 `get_coordinates_for_city` 获取坐标。\n"
-            "   - **然后 (或用户询问 '附近'):** 你必须调用 `search_nearby_places`。对于 `location` 参数，*必须* 使用 GPS 坐标 (例如 '{user_location_string}' 或你刚查到的坐标)。\n"
-            "2. **地点翻译规则 (非常重要):**\n"
-            "   - 当调用 `search_nearby_places` 时，`query` 参数 *必须* 是一个有效的地点类别。\n"
-            "   - 如果用户说 '好吃' 或 '吃的'，*必须* 使用 `query='restaurant'` (使用英文！)。\n"
-            "   - 如果用户说 '好玩' 或 '玩的'，*必须* 使用 `query='tourist attraction'` (使用英文！)。\n"
-            "   - **绝对不要** 使用 '明点'、'好吃的东西'、'景点' 或 '餐厅' 这种中文查询。\n"
-            "3. **[!!! 新增：失败重试规则 !!!]**\n" 
-            "   - 如果 `search_nearby_places` 工具返回 '未能找到' (ZERO_RESULTS) 的消息，这说明你的 `query` 参数可能是错的。\n"
-            "   - 你 *不应该* 重复相同的失败查询。\n"
-            "   - 你应该向用户道歉，说明你未能找到（例如）'tourist attraction'，并 *询问用户* 是否想尝试一个不同的词（例如 '公园' (Park) 或 '博物馆' (Museum)）。\n"
-            "4. **确认规则:** 在推荐地点后，*等待* 用户确认，然后再调用 `Calendars_from_prompt`。 \n"
+            "2. **格式化:** *不要* 使用 Markdown 的 `**` 来加粗文本。请使用直白的文本，或者使用 【标题】 这种方式来强调。\n\n"
+            "当用户要求'规划行程'、'推荐方案'或'plan a trip'时，请遵循以下步骤：\n"
+            "1. **普通搜索:** 用户问'附近好吃的' -> 调用 `search_nearby_places` 即可。\n"
+            "2. **行程规划模式 (核心):**\n"
+            "   - 当用户要求'规划行程'、'推荐方案'时，你必须：\n"
+            "     a. 先调用 `search_nearby_places` 搜索真实地点（为了获取 photo_reference 和灵感）。\n"
+            "     b. **不要**直接输出这些地点。你要基于这些地点，设计 3-5 个不同的**行程方案**。\n"
+            "     c. **必须**以 JSON 数组格式输出这些方案，结构必须伪装成地点卡片格式，以便前端渲染：\n"
+            "        [\n"
+            "          {\n"
+            "            \"name\": \"方案1：京都历史古韵5日游\",\n"
+            "            \"address\": \"适合人群：历史迷 | 强度：中等\",\n"
+            "            \"rating\": 5.0,\n"
+            "            \"business_status\": \"PLAN\",\n"  # <--- 关键标签，告诉前端这是个 Plan
+            "            \"price_level\": \"PRICE_LEVEL_MODERATE\",\n"
+            "            \"photo_reference\": \"...\", (从搜索结果里借用一张好看的图)\n"
+            "            \"review_list\": [\"第一天：清水寺...\\n第二天：金阁寺...\"] (把详细行程写在这里)\n"
+            "          },\n"
+            "          ... (更多方案)\n"
+            "        ]\n"
+            " - **只输出纯 JSON 文本**。绝对不要使用 Markdown 代码块（即不要使用 ```json 或 ``` 包裹），直接以 [ 开头，以 ] 结尾。\n"
+            # "4. **确认规则:** 在推荐地点后，*等待* 用户确认，然后再调用 `Calendars_from_prompt`。 \n"
+            "5. **日历规则:** **注意：此应用已禁用日历功能。** 即使用户要求安排日程，也应礼貌地告知用户此功能已被禁用。\n"
         )
         
         model = genai.GenerativeModel(
@@ -171,9 +173,9 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         if gemini_messages and gemini_messages[0]['role'] == 'model':
             gemini_messages = gemini_messages[1:]
 
-        print(f"--- [聊天日志] 正在调用 Gemini (1.5 Pro)... ---")
+        print(f"--- [聊天日志] 正在调用 Gemini (2.5 Flash)... ---")
 
-        max_turns = 5
+        max_turns = 15
         turn_count = 0
             
         while turn_count < max_turns:
@@ -223,35 +225,58 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
                         elif user_location_string:
                             final_location_query = user_location_string
                         else:
-                            raise ValueError("未能确定搜索地点（AI 未提供坐标，用户 GPS 也不可用）。")
+                            raise ValueError("未能确定搜索地点。")
                             
                         print(f"--- [工具执行] 最终搜索 Query: {query}, Location: {final_location_query} ---")
                         tool_result_content = search_nearby_places(query, final_location_query)
 
-                        # ###############################################################
-                        # [!!! 关键修复：直接返回拦截逻辑 !!!]
-                        # ###############################################################
-                        # 检查工具是否返回了有效的地点列表 (以 '[' 开头)
+                        # ===============================================================
+                        # [!!! 智能分流逻辑 !!!]
+                        # ===============================================================
                         if tool_result_content and tool_result_content.strip().startswith("["):
-                            print("--- [系统优化] 检测到 search_nearby_places 成功返回数据。 ---")
-                            print("--- [系统优化] 正在直接返回 POPUP_DATA 给前端，跳过 AI 生成步骤。 ---")
                             
-                            # 直接构造魔法字符串返回，保证 JSON 100% 完整
-                            return f"POPUP_DATA::{tool_result_content}"
-                        # ###############################################################
+                            last_user_msg = ""
+                            for m in reversed(conversation_history):
+                                if m.get('role') == 'user':
+                                    parts = m.get('parts', [])
+                                    if isinstance(parts, list) and len(parts) > 0: last_user_msg = str(parts[0])
+                                    elif isinstance(parts, str): last_user_msg = parts
+                                    break
+                            
+                            # 关键词：如果包含这些，说明用户要的是“方案”，不是“地点清单”
+                            plan_keywords = ["行程", "规划", "安排", "攻略", "玩几天", "日游", "plan", "itinerary", "schedule", "trip", "guide"]
+                            is_planning = any(k in last_user_msg.lower() for k in plan_keywords)
+
+                            if is_planning:
+                                print(f"--- [智能判断] 用户做攻略 -> 放行给 AI 组装方案卡片 ---")
+                                pass  # <--- 关键！放行！让 AI 去处理成方案 JSON
+                            else:
+                                print("--- [聊天日志] AI 决定普通回复 (循环结束)。 ---")
+                                if response_content.parts and response_content.parts[0].text:
+                                    ai_text = response_content.parts[0].text.strip()
+                                    
+                                    # 1. 无论如何，先强制清理 Markdown 标记
+                                    clean_text = ai_text.replace("```json", "").replace("```", "").strip()
+
+                                    # 2. 检查清理后的文本是否是 JSON 数组
+                                    if clean_text.startswith("[") and clean_text.endswith("]"):
+                                        print("--- [系统] 检测到 AI 生成了 JSON 方案，正在转换为卡片模式... ---")
+                                        # 返回清理后的纯 JSON 给前端
+                                        return f"POPUP_DATA::{clean_text}"
+                                    
+                                    # 如果不是 JSON，返回原始文本
+                                    return ai_text
+                                else:
+                                    return "AI 决定回复，但未能生成文本。"
+                        # ===============================================================
 
                     except Exception as e:
                         print(f"--- [工具执行错误] {e} ---")
                         tool_result_content = f"执行地点搜索时发生错误: {str(e)}"
                 
-                elif function_name == "create_calendar_events_from_prompt":
-                    try:
-                        user_prompt_for_tool = function_args.get("user_prompt")
-                        print(f"--- [工具执行] 收到工具调用 (create_calendar_events_from_prompt) ---")
-                        events_list = get_event_details_from_ai(user_prompt_for_tool)
-                        if not events_list: raise ValueError("未能提取任何日程。")
-                        tool_result_content = execute_google_calendar_batch(events_list, credentials_dict)
-                    except Exception as e: tool_result_content = f"执行日历工具时发生错误: {str(e)}"
+                # 移除 create_calendar_events_from_prompt 的执行逻辑
+                # elif function_name == "create_calendar_events_from_prompt":
+                #     ... (移除) ...
 
                 elif function_name == "get_current_weather":
                     try:
@@ -302,10 +327,20 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
             else:
                 print("--- [聊天日志] AI 决定普通回复 (循环结束)。 ---")
                 if response_content.parts and response_content.parts[0].text:
-                    return response_content.parts[0].text
+                    ai_text = response_content.parts[0].text.strip()
+                    
+                    # [!!! 核心修改 !!!]
+                    # 如果 AI 输出的是 JSON 数组（看起来像是方案卡片），
+                    # 我们就给它加上魔法前缀，强制前端弹窗显示！
+                    if ai_text.startswith("[") and ai_text.endswith("]"):
+                        print("--- [系统] 检测到 AI 生成了 JSON 方案，正在转换为卡片模式... ---")
+                        # 清理可能存在的 Markdown 标记
+                        clean_json = ai_text.replace("```json", "").replace("```", "").strip()
+                        return f"POPUP_DATA::{clean_json}"
+                    
+                    return ai_text
                 else:
-                    return "AI 决定回复，但未能生成文本。"
-        
+                    return "AI 决定回复，但未能生成文本。"        
         return "抱歉，AI 代理陷入了思考循环，请重试。"
 
     except Exception as e:

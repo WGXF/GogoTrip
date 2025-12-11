@@ -1,0 +1,486 @@
+2025-12-11 00:44:46,818 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 00:44:46,887 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 00:44:46,890 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 00:44:46,890 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 00:44:46,897 - INFO - b" * Serving Flask app 'main_app'\r\n"
+2025-12-11 00:44:46,897 - INFO - b' * Debug mode: on\r\n'
+2025-12-11 00:44:46,927 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2025-12-11 00:44:46,930 - INFO - [33mPress CTRL+C to quit[0m
+2025-12-11 00:44:46,941 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 00:44:48,269 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 00:44:48,341 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 00:44:48,345 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 00:44:48,345 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 00:44:48,367 - WARNING -  * Debugger is active!
+2025-12-11 00:44:48,385 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 00:44:54,736 - INFO - 127.0.0.1 - - [11/Dec/2025 00:44:54] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:44:54,740 - INFO - 127.0.0.1 - - [11/Dec/2025 00:44:54] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:11,105 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:11,111 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:26,228 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:26] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:26,231 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:26] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:28,657 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:28] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:45:28,662 - INFO - 127.0.0.1 - - [11/Dec/2025 00:45:28] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 00:58:18,419 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\flask\\sansio\\scaffold.py', reloading
+2025-12-11 00:58:18,832 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 00:58:20,315 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 00:58:20,389 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 00:58:20,392 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 00:58:20,392 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 00:58:20,411 - WARNING -  * Debugger is active!
+2025-12-11 00:58:20,429 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 01:08:39,247 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,249 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,255 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,258 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,261 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,264 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,267 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:39,271 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:39] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,054 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,062 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,094 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,101 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,102 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,105 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,113 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:40,119 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:55,628 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:55] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:55,631 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:55] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:58,744 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:58] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:08:58,747 - INFO - 127.0.0.1 - - [11/Dec/2025 01:08:58] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:09:04,116 - INFO - 127.0.0.1 - - [11/Dec/2025 01:09:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:09:04,122 - INFO - 127.0.0.1 - - [11/Dec/2025 01:09:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:09,316 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:09,320 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:14,566 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:14] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:14,569 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:14] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:21,458 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:21] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:21,461 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:21] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:34,171 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:34] "OPTIONS /auth/login-email HTTP/1.1" 200 -
+2025-12-11 01:10:34,288 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:34] "POST /auth/login-email HTTP/1.1" 200 -
+2025-12-11 01:10:41,623 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:41] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:10:43,591 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:43] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:10:44,243 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:10:44,640 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:44] "[32mGET /oauth2callback?state=VAyokzdQZVLip1MzQuyjousdu897WU&code=4/0ATX87lMSN11EpezD6n0keB-NkoNo8giUjAOOJyTBhyBQOamxGz7Hrm0FpR2HiU3MRDfpZQ&scope=email+profile+https://www.googleapis.com/auth/calendar+openid+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:10:44,834 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:44] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:44,838 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:44] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:47,090 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:47] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:47,093 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:47] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:50,072 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:50] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:10:50,077 - INFO - 127.0.0.1 - - [11/Dec/2025 01:10:50] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:12:10,131 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 01:12:10,242 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 01:12:10,349 - INFO - --- [系统] Super Admin 账号已自动创建: admin@gogotrip.com / admin123 ---
+2025-12-11 01:12:10,349 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 01:12:10,354 - INFO - b" * Serving Flask app 'main_app'\r\n"
+2025-12-11 01:12:10,354 - INFO - b' * Debug mode: on\r\n'
+2025-12-11 01:12:10,389 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2025-12-11 01:12:10,389 - INFO - [33mPress CTRL+C to quit[0m
+2025-12-11 01:12:10,398 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 01:12:12,139 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 01:12:12,234 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 01:12:12,240 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 01:12:12,240 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 01:12:12,263 - WARNING -  * Debugger is active!
+2025-12-11 01:12:12,286 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 01:12:13,280 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:13] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:12:13,300 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:13] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:12:33,579 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:33] "OPTIONS /auth/send-code HTTP/1.1" 200 -
+2025-12-11 01:12:36,455 - INFO - ✅ 邮件已成功发送给 yuankai0504@gmail.com
+2025-12-11 01:12:36,456 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:36] "POST /auth/send-code HTTP/1.1" 200 -
+2025-12-11 01:12:59,721 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:59] "OPTIONS /auth/signup-verify HTTP/1.1" 200 -
+2025-12-11 01:12:59,860 - INFO - 127.0.0.1 - - [11/Dec/2025 01:12:59] "POST /auth/signup-verify HTTP/1.1" 200 -
+2025-12-11 01:13:21,019 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:21] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:13:21,025 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:21] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:13:23,717 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:13:23,723 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:13:51,767 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:51] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:13:51,772 - INFO - 127.0.0.1 - - [11/Dec/2025 01:13:51] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:03,912 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:03] "OPTIONS /auth/login-email HTTP/1.1" 200 -
+2025-12-11 01:14:04,027 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:04] "[31m[1mPOST /auth/login-email HTTP/1.1[0m" 400 -
+2025-12-11 01:14:06,523 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:06] "POST /auth/login-email HTTP/1.1" 200 -
+2025-12-11 01:14:09,967 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:09] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:14:11,041 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:11,044 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:11,717 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:11,719 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:19,281 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:19] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:14:19,846 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:14:20,252 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:20] "[32mGET /oauth2callback?state=GMmrqRZ4LMFhDYXxXn1pklY4I5KjTu&code=4/0ATX87lOkPOBRyPnKROjTorbtzA5aQZfErP06SYHY2Kzb0ucQRAWU6ekuAsy_DB4bmJkIAA&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/calendar+openid+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:14:20,399 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:20] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:20,402 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:20] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:23,523 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:14:23,527 - INFO - 127.0.0.1 - - [11/Dec/2025 01:14:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,111 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,113 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,116 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,119 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,122 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,124 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,127 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,129 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,869 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,874 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,879 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,884 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,898 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,903 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,911 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:53,917 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:55,818 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:55] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:55,822 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:55] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:58,292 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:58] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:17:58,303 - INFO - 127.0.0.1 - - [11/Dec/2025 01:17:58] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:19:06,912 - INFO - 127.0.0.1 - - [11/Dec/2025 01:19:06] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:19:06,918 - INFO - 127.0.0.1 - - [11/Dec/2025 01:19:06] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:21:57,296 - INFO - 127.0.0.1 - - [11/Dec/2025 01:21:57] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:21:57,301 - INFO - 127.0.0.1 - - [11/Dec/2025 01:21:57] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:21:59,864 - INFO - 127.0.0.1 - - [11/Dec/2025 01:21:59] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:22:00,040 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:00] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:00,043 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:00] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:02,101 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:02] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:22:02,725 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:22:03,120 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:03] "[32mGET /oauth2callback?state=SumFJDuScmC6MW3bCPXGYflm499qVr&code=4/0ATX87lNDimXq-nKu-3qnCSCLoiRXAb00NU0gqbli2Mclt69dTlOK4Qf0leMU860YHcm3nw&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+openid+https://www.googleapis.com/auth/calendar+https://www.googleapis.com/auth/userinfo.email&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:22:03,288 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:03] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:03,291 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:03] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:07,223 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:07] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:22:07,387 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:07] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:07,390 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:07] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:48,131 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:48] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:22:48,136 - INFO - 127.0.0.1 - - [11/Dec/2025 01:22:48] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:05,906 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:05] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:05,912 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:05] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:08,330 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:08] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:24:08,585 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:08] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:08,587 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:08] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:10,019 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:10] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:24:10,656 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:24:11,065 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:11] "[32mGET /oauth2callback?state=IDteLOZ9TXopVQ2PFMYAitItMNrjLW&code=4/0ATX87lP8XelPv4wHt8DWUWLLqp5aX20YcXa10eaCWKgKjSyd220efhEfBcHNVVQsg5eA8A&scope=email+profile+openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/calendar&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:24:11,267 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:11,272 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:11] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:14,030 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:14] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:24:14,232 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:14] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:14,236 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:14] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:15,683 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:15] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:24:16,269 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:24:16,644 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:16] "[32mGET /oauth2callback?state=0yCjFSOzrpLn1C7Asqu7ZpAIuFR3AA&code=4/0ATX87lMIv6t44JZEYOj6Lvli5DB7KMbA5pvf8keDe3F69fOgw0pItoTq4TAu0DWAz_9yZQ&scope=email+profile+https://www.googleapis.com/auth/calendar+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:24:16,830 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:16] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:16,835 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:16] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:20,716 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:20] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:20,720 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:20] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:23,550 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:23] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:24:23,748 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:23,750 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:23] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:28,104 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:28] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:24:28,739 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:24:29,106 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:29] "[32mGET /oauth2callback?state=8ACLYlOOYLtPh9NMk5PhjgkEbJJCYr&code=4/0ATX87lOgA0ay9Th2VhIj0v9ZZ3fN9q-hOPCiVNbiI0yx5z0_Ehc_wgAjtUZcQYInYReKWw&scope=email+profile+openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/calendar+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:24:29,289 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:29] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:24:29,293 - INFO - 127.0.0.1 - - [11/Dec/2025 01:24:29] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:25:10,859 - INFO -  * Detected change in 'C:\\Program Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\\Lib\\os.py', reloading
+2025-12-11 01:25:12,132 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 01:25:33,206 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 01:25:33,966 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 01:25:33,970 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 01:25:33,970 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 01:25:34,383 - WARNING -  * Debugger is active!
+2025-12-11 01:25:34,403 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 01:37:46,325 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 01:37:46,399 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 01:37:46,402 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 01:37:46,402 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 01:37:46,409 - INFO - b" * Serving Flask app 'main_app'\r\n"
+2025-12-11 01:37:46,409 - INFO - b' * Debug mode: on\r\n'
+2025-12-11 01:37:46,444 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2025-12-11 01:37:46,444 - INFO - [33mPress CTRL+C to quit[0m
+2025-12-11 01:37:46,453 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 01:37:48,298 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 01:37:48,396 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 01:37:48,399 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 01:37:48,399 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 01:37:48,429 - WARNING -  * Debugger is active!
+2025-12-11 01:37:48,456 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 01:37:49,218 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:49] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:49,223 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:49] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:51,493 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:51] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 01:37:51,688 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:51] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:51,691 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:51] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:52,494 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:52] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 01:37:53,161 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 01:37:53,609 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:53] "[32mGET /oauth2callback?state=sUkLbzaVUwdOCArtqsvmBk9UhWplrb&code=4/0ATX87lMPF5R1E5uNYrHnIXGppZV5qAUE-wMpJnUXE-Fy2ibGoZLLa09BvCOn2HlOf_wOpg&scope=email+profile+https://www.googleapis.com/auth/calendar+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 01:37:53,807 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:53,812 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:53] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 01:37:58,280 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:58] "GET /calendar/events HTTP/1.1" 200 -
+2025-12-11 01:37:58,285 - INFO - 127.0.0.1 - - [11/Dec/2025 01:37:58] "GET /calendar/events HTTP/1.1" 200 -
+2025-12-11 08:44:12,584 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:44:13,752 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:44:13,763 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:44:13,763 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:44:13,861 - INFO - b" * Serving Flask app 'main_app'\r\n"
+2025-12-11 08:44:13,862 - INFO - b' * Debug mode: on\r\n'
+2025-12-11 08:44:14,541 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.193.108.80:5000
+2025-12-11 08:44:14,541 - INFO - [33mPress CTRL+C to quit[0m
+2025-12-11 08:44:14,820 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:44:18,183 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:44:18,361 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:44:18,370 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:44:18,370 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:44:18,426 - WARNING -  * Debugger is active!
+2025-12-11 08:44:18,497 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 08:44:18,744 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:18] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 08:44:20,469 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 08:44:21,454 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:21] "[32mGET /oauth2callback?state=Tj6i5iftavAWBWvzudl5emCisagq34&code=4/0ATX87lNI6942cZC4cXbiNXssOISuujuBUb3LDGW7SwEGGB8GM8ouDM8K_xtvuvAQv0kHNA&scope=email+profile+openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/calendar&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 08:44:22,399 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:22] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:44:22,410 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:22] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:44:47,522 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:47] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:44:48,251 - INFO - Translation Error: 400 API key not valid. Please pass a valid API key. [reason: "API_KEY_INVALID"
+domain: "googleapis.com"
+metadata {
+  key: "service"
+  value: "generativelanguage.googleapis.com"
+}
+, locale: "en-US"
+message: "API key not valid. Please pass a valid API key."
+]
+2025-12-11 08:44:48,252 - INFO - 127.0.0.1 - - [11/Dec/2025 08:44:48] "[35m[1mPOST /translate HTTP/1.1[0m" 500 -
+2025-12-11 08:45:42,749 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 08:45:42,751 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 08:45:44,091 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:45:47,421 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:45:47,601 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:45:47,610 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:45:47,611 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:45:47,658 - WARNING -  * Debugger is active!
+2025-12-11 08:45:47,693 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 08:45:48,544 - INFO - 127.0.0.1 - - [11/Dec/2025 08:45:48] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:45:54,690 - INFO - 127.0.0.1 - - [11/Dec/2025 08:45:54] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:46:04,167 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:04] "OPTIONS /tts HTTP/1.1" 200 -
+2025-12-11 08:46:04,395 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:04] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:07,305 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:07] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:09,232 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:09] "OPTIONS /tts HTTP/1.1" 200 -
+2025-12-11 08:46:09,454 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:09] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:10,673 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:10] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:11,948 - WARNING - 'zh-cn' has been deprecated, falling back to 'zh-CN'. This fallback will be removed in a future version.
+2025-12-11 08:46:12,502 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:12] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:12,994 - WARNING - 'zh-cn' has been deprecated, falling back to 'zh-CN'. This fallback will be removed in a future version.
+2025-12-11 08:46:13,245 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:13] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:19,265 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:19] "OPTIONS /tts HTTP/1.1" 200 -
+2025-12-11 08:46:19,271 - WARNING - 'zh-cn' has been deprecated, falling back to 'zh-CN'. This fallback will be removed in a future version.
+2025-12-11 08:46:19,511 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:19] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:22,842 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:22] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:24,807 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\pyparsing\\core.py', reloading
+2025-12-11 08:46:26,354 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:46:29,818 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:46:30,015 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:46:30,024 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:46:30,024 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:46:30,073 - WARNING -  * Debugger is active!
+2025-12-11 08:46:30,125 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 08:46:30,463 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:30] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:46:37,438 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:37] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:46:39,603 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:39] "OPTIONS /tts HTTP/1.1" 200 -
+2025-12-11 08:46:39,910 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:39] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:44,486 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:44] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:45,129 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:45] "OPTIONS /tts HTTP/1.1" 200 -
+2025-12-11 08:46:45,336 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:45] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:46,621 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:46] "POST /tts HTTP/1.1" 200 -
+2025-12-11 08:46:51,157 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:51] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:46:56,782 - INFO - 127.0.0.1 - - [11/Dec/2025 08:46:56] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:47:00,315 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:00] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:47:01,830 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:01] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:47:10,385 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:10] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:47:12,894 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:12] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:47:22,928 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:22] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:47:28,117 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:28] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:47:33,354 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:33] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:47:41,085 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:41] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:47:55,449 - INFO - 127.0.0.1 - - [11/Dec/2025 08:47:55] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:48:24,948 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\google\\auth\\__init__.py', reloading
+2025-12-11 08:48:24,980 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\google\\auth\\credentials.py', reloading
+2025-12-11 08:48:25,022 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\google\\auth\\_credentials_base.py', reloading
+2025-12-11 08:48:25,724 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:48:29,042 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:48:29,195 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:48:29,199 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:48:29,199 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:48:29,236 - WARNING -  * Debugger is active!
+2025-12-11 08:48:29,289 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 08:50:02,372 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\routes\\translate.py', reloading
+2025-12-11 08:50:02,374 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\routes\\translate.py', reloading
+2025-12-11 08:50:03,703 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:50:07,820 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:50:08,079 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:50:08,087 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:50:08,087 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:50:08,138 - WARNING -  * Debugger is active!
+2025-12-11 08:50:08,186 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 08:50:08,926 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:08] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:50:08,946 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:08] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:50:20,256 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:20] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:50:25,027 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:25] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:50:28,969 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:28] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:50:41,768 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:41] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:50:46,638 - INFO - 127.0.0.1 - - [11/Dec/2025 08:50:46] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:51:01,704 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:01] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:51:09,742 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:09] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:51:18,174 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:18] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:51:24,419 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:24] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:51:28,157 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:28] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:51:31,048 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:31] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:51:44,936 - INFO - 127.0.0.1 - - [11/Dec/2025 08:51:44] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:52:20,829 - INFO - 127.0.0.1 - - [11/Dec/2025 08:52:20] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:52:28,870 - INFO - 127.0.0.1 - - [11/Dec/2025 08:52:28] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:52:36,070 - INFO - 127.0.0.1 - - [11/Dec/2025 08:52:36] "OPTIONS /translate HTTP/1.1" 200 -
+2025-12-11 08:52:48,788 - INFO - 127.0.0.1 - - [11/Dec/2025 08:52:48] "POST /translate HTTP/1.1" 200 -
+2025-12-11 08:53:17,307 - INFO - 127.0.0.1 - - [11/Dec/2025 08:53:17] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 08:53:17,906 - INFO - 127.0.0.1 - - [11/Dec/2025 08:53:17] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:53:17,910 - INFO - 127.0.0.1 - - [11/Dec/2025 08:53:17] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:53:43,841 - INFO - 127.0.0.1 - - [11/Dec/2025 08:53:43] "OPTIONS /auth/login-email HTTP/1.1" 200 -
+2025-12-11 08:53:44,072 - INFO - 127.0.0.1 - - [11/Dec/2025 08:53:44] "POST /auth/login-email HTTP/1.1" 200 -
+2025-12-11 08:54:01,469 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:01] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 08:54:01,932 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:01] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:54:01,936 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:01] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:54:04,242 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:54:04,246 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:54:04,848 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:54:04,853 - INFO - 127.0.0.1 - - [11/Dec/2025 08:54:04] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 08:55:32,274 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 08:55:32,276 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 08:55:32,974 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 08:56:06,219 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 08:56:07,377 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 08:56:07,386 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 08:56:07,387 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 08:56:08,134 - WARNING -  * Debugger is active!
+2025-12-11 08:56:08,175 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 09:16:35,891 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:35] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 09:16:35,905 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:35] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 09:16:36,976 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:36] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 09:16:38,530 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 09:16:39,411 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:39] "[32mGET /oauth2callback?state=q5AT7rd41No14hCV604mTeTuuLWapC&code=4/0ATX87lO5chWlPGlodHRggXq28y_LjmEG4pLTZwtpyDcT9FgMrspWEEt5moh9XfvkTy-BPQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email+openid+https://www.googleapis.com/auth/calendar&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 09:16:40,041 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 09:16:40,048 - INFO - 127.0.0.1 - - [11/Dec/2025 09:16:40] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:21:52,905 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:21:53,800 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:21:56,116 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:21:56,218 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:21:56,224 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:21:56,224 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:21:56,260 - WARNING -  * Debugger is active!
+2025-12-11 12:21:56,285 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:22:15,630 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:22:15,631 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:22:15,631 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:22:16,905 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:22:18,761 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:22:18,845 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:22:18,848 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:22:18,849 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:22:18,875 - WARNING -  * Debugger is active!
+2025-12-11 12:22:18,895 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:44:57,724 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\ai_agent.py', reloading
+2025-12-11 12:44:58,114 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\ai_agent.py', reloading
+2025-12-11 12:44:58,819 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:45:18,815 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:45:19,488 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:45:19,492 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:45:19,493 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:45:19,882 - WARNING -  * Debugger is active!
+2025-12-11 12:45:19,901 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:49:37,409 - INFO - 127.0.0.1 - - [11/Dec/2025 12:49:37] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:49:37,414 - INFO - 127.0.0.1 - - [11/Dec/2025 12:49:37] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:49:52,574 - INFO - 127.0.0.1 - - [11/Dec/2025 12:49:52] "GET / HTTP/1.1" 200 -
+2025-12-11 12:50:05,600 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:05] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:50:05,603 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:05] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:50:06,957 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:06] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 12:50:08,335 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 12:50:08,857 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:08] "[32mGET /oauth2callback?state=AkdTi0m9mZch9bbBFjgCGdZ8iKqKaS&code=4/0ATX87lMJv7mc3HM9bbZzoF4GiFSC1ip32ZVqrDr4FVrPmFOab899uG6H97JOqiexwFDf2g&scope=email+profile+openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/calendar+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 12:50:09,004 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:50:09,010 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:50:14,187 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:14] "GET /calendar/events HTTP/1.1" 200 -
+2025-12-11 12:50:14,193 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:14] "GET /calendar/events HTTP/1.1" 200 -
+2025-12-11 12:50:15,328 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 12:50:15,349 - INFO - --- [Sync] 正在为用户 3 执行同步... ---
+2025-12-11 12:50:16,296 - INFO - --- [Sync] 同步完成，更新了 100 条数据 ---
+2025-12-11 12:50:16,296 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:16] "POST /calendar/sync HTTP/1.1" 200 -
+2025-12-11 12:50:16,305 - INFO - 127.0.0.1 - - [11/Dec/2025 12:50:16] "GET /calendar/events HTTP/1.1" 200 -
+2025-12-11 12:51:59,148 - INFO - 127.0.0.1 - - [11/Dec/2025 12:51:59] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:51:59,155 - INFO - 127.0.0.1 - - [11/Dec/2025 12:51:59] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:01,246 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:01] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:01,251 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:01] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:09,488 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:09,493 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:09] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:12,441 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:12] "POST /auth/logout HTTP/1.1" 200 -
+2025-12-11 12:52:12,629 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:12] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:12,632 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:12] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:13,507 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:13] "[32mGET /authorize HTTP/1.1[0m" 302 -
+2025-12-11 12:52:14,201 - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-12-11 12:52:14,951 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:14] "[32mGET /oauth2callback?state=dWJ4VniAsTLgUcPLYozHSqyMEOdLqb&code=4/0ATX87lOcZOP4tyxZ2oM2YRB-WaIDDFbheZW10nVJY1-VIZn3vxeV9bdDYB4ELLgKbufbPQ&scope=email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/calendar+openid+https://www.googleapis.com/auth/userinfo.profile&authuser=0&prompt=none HTTP/1.1[0m" 302 -
+2025-12-11 12:52:15,118 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:15] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:52:15,122 - INFO - 127.0.0.1 - - [11/Dec/2025 12:52:15] "GET /check_login_status HTTP/1.1" 200 -
+2025-12-11 12:56:19,931 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:56:20,842 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:56:22,648 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:56:22,727 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:56:22,732 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:56:22,732 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:56:22,759 - WARNING -  * Debugger is active!
+2025-12-11 12:56:22,776 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:59:12,632 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:12,634 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:13,617 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:59:15,443 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:59:15,526 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:59:15,529 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:59:15,529 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:59:15,555 - WARNING -  * Debugger is active!
+2025-12-11 12:59:15,578 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:59:27,149 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:27,149 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:27,150 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:27,486 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:59:29,077 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:59:29,167 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:59:29,169 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:59:29,169 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:59:29,195 - WARNING -  * Debugger is active!
+2025-12-11 12:59:29,217 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 12:59:43,299 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:43,300 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 12:59:44,334 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 12:59:45,863 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 12:59:45,931 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 12:59:45,933 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 12:59:45,933 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 12:59:45,957 - WARNING -  * Debugger is active!
+2025-12-11 12:59:45,974 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 13:00:05,458 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 13:00:05,460 - INFO -  * Detected change in 'D:\\FYP\\GogoTrip_Local_test\\config.py', reloading
+2025-12-11 13:00:06,452 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 13:00:08,159 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 13:00:08,228 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 13:00:08,231 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 13:00:08,231 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 13:00:08,254 - WARNING -  * Debugger is active!
+2025-12-11 13:00:08,275 - INFO -  * Debugger PIN: 122-134-578
+2025-12-11 13:34:41,204 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\dotenv\\__init__.py', reloading
+2025-12-11 13:34:41,238 - INFO -  * Detected change in 'C:\\Users\\user\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python312\\site-packages\\dotenv\\main.py', reloading
+2025-12-11 13:34:42,993 - INFO -  * Restarting with watchdog (windowsapi)
+2025-12-11 13:35:10,349 - INFO - --- 日志系统已启动，正在写入 app.log ---
+2025-12-11 13:35:11,189 - INFO - --- [系统] 数据库表已检查/创建 ---
+2025-12-11 13:35:11,207 - INFO - --- [系统] Super Admin 账号已存在，跳过创建 ---
+2025-12-11 13:35:11,209 - INFO - 应用正在启动: http://127.0.0.1:5000
+2025-12-11 13:35:11,772 - WARNING -  * Debugger is active!
+2025-12-11 13:35:11,807 - INFO -  * Debugger PIN: 122-134-578

@@ -3,6 +3,8 @@ import requests
 import json
 import time
 from datetime import datetime, timedelta
+from models import db, Place
+from flask import current_app
 
 # 从配置导入
 import config
@@ -93,6 +95,64 @@ def get_coordinates_for_city(city_name: str) -> str:
 # tools.py
 # (请确保文件顶部有 import requests, json, config)
 
+def save_places_to_db(places_data_list):
+    """
+    接收 search_nearby_places 解析后的字典列表，
+    检查数据库是否已存在，如果不存在则存入数据库 (Read-Through Caching 策略的一部分)。
+    """
+    # 必须在 app_context 下运行数据库操作
+    # 因为 tools.py 被调用时通常是在请求里，所以 current_app 是可用的
+    
+    saved_count = 0
+    try:
+        for p_data in places_data_list:
+            # 1. Google API 的 ID 是最关键的去重标识
+            # 注意：这里的 p_data 是你 search_nearby_places 函数里 parse 好的 clean_details
+            # 但我们需要确保 clean_details 里包含 'id' (Google Place ID)
+            # 你之前的代码只取了 name, address 等，我们需要把 place['id'] 也放进去
+            
+            place_id = p_data.get('google_place_id') 
+            if not place_id:
+                continue
+
+            # 2. 查库：如果已经存在，就跳过 (或者你可以选择更新 update)
+            existing_place = Place.query.filter_by(google_place_id=place_id).first()
+            
+            if not existing_place:
+                # 3. 清洗数据并创建对象
+                new_place = Place(
+                    google_place_id=place_id,
+                    name=p_data.get('name'),
+                    address=p_data.get('address'),
+                    rating=p_data.get('rating') if isinstance(p_data.get('rating'), (int, float)) else None,
+                    business_status=p_data.get('business_status'),
+                    is_open_now=p_data.get('is_open_now') if isinstance(p_data.get('is_open_now'), bool) else None,
+                    
+                    # 存 JSON
+                    opening_hours=p_data.get('opening_hours_weekday', []),
+                    phone=p_data.get('phone'),
+                    website=p_data.get('website'),
+                    price_level=p_data.get('price_level'),
+                    
+                    # 坐标可能是个字典 {'latitude': ..., 'longitude': ...}，转成字符串存方便点
+                    coordinates=json.dumps(p_data.get('coordinates')),
+                    
+                    photo_reference=p_data.get('photo_reference'),
+                    review_list=p_data.get('review_list', [])
+                )
+                
+                db.session.add(new_place)
+                saved_count += 1
+        
+        # 4. 提交事务
+        if saved_count > 0:
+            db.session.commit()
+            print(f"--- [DB 缓存] 成功存入 {saved_count} 个新地点到数据库 ---")
+            
+    except Exception as e:
+        print(f"--- [DB 错误] 存入地点数据时出错: {e} ---")
+        db.session.rollback() # 出错回滚
+
 def search_nearby_places(query: str, location: str, rank_by: str = "prominence", radius: int = 5000) -> str:
     """
     [v2.0 性能优化版]
@@ -177,6 +237,7 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
 
                 # 4. 构建整洁的字典
                 clean_details = {
+                    "google_place_id": place.get("id"),
                     "name": place.get("displayName", {}).get("text", "未知名称"),
                     "address": place.get("formattedAddress", "未知地址"),
                     "rating": place.get("rating", "N/A"),
@@ -194,14 +255,13 @@ def search_nearby_places(query: str, location: str, rank_by: str = "prominence",
             except Exception as e:
                 print(f"解析单个地点出错: {e}")
                 continue
-        
+
+        if results:
+            save_places_to_db(results)
+
         print(f"--- [完成] 成功处理 {len(results)} 个地点 ---")
         return json.dumps(results, ensure_ascii=False)
 
     except Exception as e:
         return f"搜索地点时发生错误: {e}"
-
-
-
-
 

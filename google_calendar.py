@@ -88,19 +88,25 @@ def execute_google_calendar_batch(events_list, credentials_dict):
     print(f"--- [工具执行] === 开始执行 Google 日历批量创建... === ---")
     success_messages = []
     error_messages = []
+    
+    # [新增] 用来记录 ID 和 标题 的对应关系，方便报错时显示中文标题
+    id_name_map = {} 
 
     try:
         credentials = Credentials(**credentials_dict)
         service = build('calendar', 'v3', credentials=credentials)
 
         def batch_callback(request_id, response, exception):
+            # [修改] 从映射表中取出原本的中文标题，如果找不到就用 request_id
+            event_name = id_name_map.get(request_id, request_id)
+            
             if exception:
-                print(f"--- [错误] 批量请求失败 (ID: {request_id}): {exception} ---")
-                error_messages.append(f"<li>失败: '{request_id}' - 错误: {exception}</li>")
+                print(f"--- [错误] 批量请求失败 (ID: {request_id}, Event: {event_name}): {exception} ---")
+                error_messages.append(f"<li>失败: '{event_name}' - 错误: {exception}</li>")
             else:
                 event_link = response.get('htmlLink')
-                print(f"--- [日志] 批量请求成功 (ID: {request_id}) ---")
-                success_messages.append(f"<li>成功: '{request_id}' <a href='{event_link}' target='_blank'>查看</a></li>")
+                print(f"--- [日志] 批量请求成功 (ID: {request_id}, Event: {event_name}) ---")
+                success_messages.append(f"<li>成功: '{event_name}' <a href='{event_link}' target='_blank'>查看</a></li>")
 
         batch = service.new_batch_http_request(callback=batch_callback)
 
@@ -109,13 +115,17 @@ def execute_google_calendar_batch(events_list, credentials_dict):
             try:
                 summary = event_data.get('summary')
                 description = event_data.get('description')
+                
+                # 智能生成标题逻辑
                 if not summary and description:
                     generated_summary = re.split(r'[。；，,.!！?？\n]', description)[0]
                     summary = (generated_summary[:47] + '...') if len(generated_summary) > 50 else generated_summary
                     event_data['summary'] = summary
+                
                 if not all(event_data.get(key) for key in ['summary', 'start_time', 'end_time']):
                     raise ValueError("日程缺少'summary', 'start_time', 或 'end_time'等关键信息。")
 
+                # 处理参与者
                 attendee_emails = set()
                 ai_attendees = event_data.get('attendees', [])
                 if isinstance(ai_attendees, list):
@@ -124,6 +134,7 @@ def execute_google_calendar_batch(events_list, credentials_dict):
                             attendee_emails.add(email)
                 valid_attendees_list = [{'email': email} for email in attendee_emails]
 
+                # 构造 Event Body
                 event_body = {
                     'summary': event_data['summary'],
                     'location': event_data.get('location', ''),
@@ -133,10 +144,18 @@ def execute_google_calendar_batch(events_list, credentials_dict):
                     'attendees': valid_attendees_list,
                     'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 10}]},
                 }
+
+                # [修改重点] 生成唯一的 Request ID
+                unique_request_id = f"{index}_{int(time.time())}"
+                
+                # [新增] 存入映射表: "0_1706xxx" -> "吃饭"
+                id_name_map[unique_request_id] = event_data['summary']
+
                 batch.add(
                     service.events().insert(calendarId='primary', body=event_body, sendNotifications=True),
-                    request_id=summary
+                    request_id=unique_request_id  # <--- 使用这一行替换原来的 request_id=summary
                 )
+
             except Exception as e:
                 error_messages.append(f"<li>失败: '{summary_original}' - 错误 (准备阶段): {e}</li>")
                 print(f"--- [错误] 准备单个日程时出错: {e} ---")
@@ -152,8 +171,10 @@ def execute_google_calendar_batch(events_list, credentials_dict):
         print(f"--- [工具执行错误] {e} ---")
         return f"创建日程失败 (在执行批量操作时): {str(e)}"
 
+    # 结果统计与返回
     num_success = len(success_messages)
     num_errors = len(error_messages)
+    
     if num_errors == 0 and num_success > 0:
         final_message = f'您的 {num_success} 个日程已全部成功创建！'
     else:
@@ -162,4 +183,5 @@ def execute_google_calendar_batch(events_list, credentials_dict):
             final_message += f"<h4>成功 ({num_success}):</h4><ul>" + "".join(success_messages) + "</ul>"
         if error_messages:
             final_message += f"<h4>失败 ({num_errors}):</h4><ul>" + "".join(error_messages) + "</ul>"
+            
     return final_message
