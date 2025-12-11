@@ -167,4 +167,34 @@ class CalendarEvent(db.Model):
     end_time = db.Column(db.DateTime)
     
     # pending, synced, failed
+
     sync_status = db.Column(db.String(20), default='pending')
+
+class Article(db.Model):
+    __tablename__ = 'articles'
+
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id')) # 谁写的
+    
+    title = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(50))   # 'Destinations', 'Tips', 'News'
+    content = db.Column(db.Text)          # HTML 或 Markdown 内容
+    cover_image = db.Column(db.Text)      # 封面图 URL
+    
+    status = db.Column(db.String(20), default='draft') # 'draft', 'published'
+    views = db.Column(db.Integer, default=0)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "title": self.title,
+            "category": self.category,
+            "status": self.status,
+            "views": self.views,
+            "date": self.created_at.strftime("%Y-%m-%d"),
+            "coverImage": self.cover_image,
+            "content": self.content
+        }
