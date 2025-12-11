@@ -193,7 +193,7 @@ def oauth2callback():
         session['user_id'] = user.id
         db.session.commit()
 
-    return redirect("http://127.0.0.1:3000/")
+    return redirect("https://gogotrip.teocodes.com/")
 
 @auth_bp.route('/check_login_status')
 def check_login():
@@ -217,3 +217,4 @@ def logout():
     session.clear() # 清空服务端 Session，这就导致 Cookie 失效
     
     return jsonify({"status": "success", "message": "已成功登出"})
+
