@@ -5,6 +5,7 @@ from flask_cors import CORS  # 1. 必须导入 CORS
 from flask_admin import Admin  # 1. 导入
 from flask_admin.contrib.sqla import ModelView
 from werkzeug.security import generate_password_hash
+from routes.info import info_bp
 import config
 
 
@@ -52,6 +53,8 @@ app.register_blueprint(proxy_bp) # 5. 注册 proxy
 app.register_blueprint(calendar_bp) # 6. 注释掉这行
 app.register_blueprint(translate_bp)
 app.register_blueprint(tts_bp)
+app.register_blueprint(info_bp)
+
 
 with app.app_context():
     db.create_all()
@@ -88,4 +91,5 @@ if __name__ == '__main__':
     print("应用正在启动: http://127.0.0.1:5000")
 
     app.run('0.0.0.0', 5000, debug=True)
+
 
