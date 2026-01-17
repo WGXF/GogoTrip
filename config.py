@@ -49,6 +49,10 @@ ALLOWED_ORIGINS = [
 ]
 
 # --- Google OAuth ---
+client_secrets_name = os.getenv(
+    "CLIENT_SECRETS_NAME",
+    "client_secret.json"
+)
 CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, client_secrets_name)
 GOOGLE_KEY_FILENAME = os.getenv("GOOGLE_KEY_FILENAME")
 
