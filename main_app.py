@@ -1,4 +1,13 @@
 import os
+
+# ============================================
+# gRPC / AI Stability Configuration
+# ============================================
+# These must be set BEFORE importing any Google/gRPC libraries
+# Prevents deadlocks in multi-threaded server environments
+os.environ["GRPC_ENABLE_FORK_SUPPORT"] = "false"
+os.environ["GRPC_POLL_STRATEGY"] = "poll"
+
 from flask import Flask, send_from_directory, redirect, jsonify
 from flask_cors import CORS
 from flask_admin import Admin
