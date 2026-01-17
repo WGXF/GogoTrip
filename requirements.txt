@@ -63,4 +63,8 @@ PyJWT>=2.8.0
 # Production Server & Async
 # -------------------------------
 gunicorn>=21.2
-eventlet>=0.33.3  # Required for Flask-SocketIO production mode
+
+# -------------------------------
+# Redis (Message Queue for SocketIO)
+# -------------------------------
+redis>=5.0
