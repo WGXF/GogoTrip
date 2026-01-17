@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 # --- Base Path Configuration ---
 # Ensure correct path resolution on server
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DOMAIN = os.getenv("DOMAIN", "https://gogotrip.teocodes.com")
 
 # Load .env from the same directory
 load_dotenv(os.path.join(BASE_DIR, '.env'))
