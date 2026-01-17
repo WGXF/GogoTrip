@@ -34,6 +34,7 @@ class User(UserMixin, db.Model):
     
     # 🆕 User Preferences
     email_notifications = db.Column(db.Boolean, default=True, nullable=False)  # Opt-in for admin notification emails
+    preferred_language = db.Column(db.String(10), default='en', nullable=False)  # UI language: en, zh, ms
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -166,7 +167,8 @@ class User(UserMixin, db.Model):
             "hasGoogleLinked": bool(self.google_id),  # True if Google account is linked
             "authProvider": auth_provider,  # 'google', 'email', or 'unknown'
             # 🆕 User Preferences
-            "emailNotifications": self.email_notifications
+            "emailNotifications": self.email_notifications,
+            "preferredLanguage": self.preferred_language or 'en'
         }
     
     def to_admin_dict(self):
