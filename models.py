@@ -1464,6 +1464,13 @@ class Advertisement(db.Model):
     # 基本信息
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
+    
+    # 🆕 Localization (Added via migration)
+    title_zh = db.Column(db.Text)
+    description_zh = db.Column(db.Text)
+    title_ms = db.Column(db.Text)
+    description_ms = db.Column(db.Text)
+    
     image_url = db.Column(db.Text)
     link = db.Column(db.Text, nullable=False)  # 广告跳转链接
     
@@ -1487,6 +1494,12 @@ class Advertisement(db.Model):
             'id': self.id,
             'title': self.title,
             'description': self.description,
+            # 🆕 Include localized fields
+            'title_zh': self.title_zh,
+            'description_zh': self.description_zh,
+            'title_ms': self.title_ms,
+            'description_ms': self.description_ms,
+            
             'imageUrl': self.image_url,
             'link': self.link,
             'status': self.status,

@@ -49,12 +49,10 @@ ALLOWED_ORIGINS = [
 ]
 
 # --- Google OAuth ---
-client_secrets_name = os.getenv(
-    "CLIENT_SECRETS_NAME",
-    "credentials.json"
+CLIENT_SECRETS_FILE = os.path.join(
+    BASE_DIR,
+    os.getenv("CLIENT_SECRETS_FILENAME", "credentials.json")
 )
-CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, client_secrets_name)
-GOOGLE_KEY_FILENAME = os.getenv("GOOGLE_KEY_FILENAME")
 
 # --- Stripe ---
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
