@@ -96,6 +96,12 @@ def create_advertisement():
         new_ad = Advertisement(
             title=title,
             description=description,
+            # 🆕 Localization
+            title_zh=title_zh,
+            description_zh=description_zh,
+            title_ms=title_ms,
+            description_ms=description_ms,
+            
             image_url=image_url,
             link=link,
             status=status,
@@ -136,6 +142,13 @@ def update_advertisement(id):
         # 更新文字字段
         ad.title = request.form.get('title', ad.title)
         ad.description = request.form.get('description', ad.description)
+        
+        # 🆕 Localization
+        ad.title_zh = request.form.get('title_zh', ad.title_zh)
+        ad.description_zh = request.form.get('description_zh', ad.description_zh)
+        ad.title_ms = request.form.get('title_ms', ad.title_ms)
+        ad.description_ms = request.form.get('description_ms', ad.description_ms)
+        
         ad.link = request.form.get('link', ad.link)
         ad.status = request.form.get('status', ad.status)
         
