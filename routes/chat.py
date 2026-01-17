@@ -484,6 +484,14 @@ def chat_message():
         history = data.get('history', [])
         coordinates = data.get('coordinates')
         user_ip = request.remote_addr
+        
+        # 🆕 Language preference for AI response (i18n support)
+        # Priority: request param > user profile > 'en' (default)
+        user_language = data.get('language')
+        if not user_language and user and hasattr(user, 'preferred_language'):
+            user_language = user.preferred_language
+        if not user_language:
+            user_language = 'en'
 
         if not user_message:
             return jsonify({'error': '消息内容为空'}), 400
@@ -520,12 +528,13 @@ def chat_message():
         # Build history for AI
         history.append({'role': 'user', 'parts': [user_message]})
 
-        # Call AI
+        # Call AI (with language preference for i18n)
         ai_response_text = get_ai_chat_response(
             history,
             user_credentials,
             coordinates=coordinates,
-            user_ip=user_ip
+            user_ip=user_ip,
+            language=user_language  # 🆕 Pass user's preferred language
         )
 
         history.append({'role': 'model', 'parts': [ai_response_text]})

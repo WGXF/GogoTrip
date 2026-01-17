@@ -34,6 +34,14 @@ def update_profile():
             # Handle string 'true'/'false' from FormData
             user.email_notifications = email_notifs.lower() == 'true' if isinstance(email_notifs, str) else bool(email_notifs)
 
+        # 🆕 3. 更新 Language Preference (i18n)
+        preferred_language = request.form.get('preferredLanguage')
+        if preferred_language is not None:
+            # Validate language code (only allow supported languages)
+            supported_languages = ['en', 'zh', 'ms']
+            if preferred_language in supported_languages:
+                user.preferred_language = preferred_language
+
         # 3. 处理头像上传
         if 'avatar' in request.files:
             file = request.files['avatar']
