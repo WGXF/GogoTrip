@@ -46,7 +46,7 @@ sys.stderr = LoggerWriter(logging.error)
 print("--- App log enabled, now writing to app.log ---")
 
 # ============ FAST MODE: Simplified itinerary generation ============
-def get_fast_itinerary_response(destination: str, duration: str, preferences: dict):
+def get_fast_itinerary_response(destination: str, duration: str, preferences: dict, language: str = 'en'):
     """
     快速生成行程 - 不使用工具调用，直接让 AI 生成结构化 JSON
     用于 MVP 阶段，优先速度而非精确的 place_id 关联
@@ -66,6 +66,9 @@ def get_fast_itinerary_response(destination: str, duration: str, preferences: di
         # Determine activities per day based on mood
         activities_per_day = "3-4" if mood in ['relaxed', 'family'] else "5-6"
         
+        # 🆕 Get full language name
+        response_language = LANGUAGE_FULL_NAMES.get(language, 'English')
+        
         fast_prompt = f"""Generate a {duration} travel itinerary for {destination}.
 
 USER PREFERENCES:
@@ -74,6 +77,11 @@ USER PREFERENCES:
 - Transport: {transport}
 - Dietary: {', '.join(dietary) if dietary else 'No restrictions'}
 - Traveling with: {companions}
+
+*** CRITICAL: RESPONSE LANGUAGE ***
+You MUST respond in {response_language}. All title, description, and content MUST be written in {response_language}.
+- If "Chinese (Simplified)", use 简体中文.
+- If "Bahasa Melayu (Malay)", use Bahasa Melayu.
 
 OUTPUT: Return ONLY valid JSON (no markdown, no explanation). Start with {{
 
@@ -133,7 +141,7 @@ RULES:
 1. Use REAL place names and addresses for {destination}
 2. place_id can be null (will be linked later)
 3. Be concise - focus on key information
-4. Match language to user's input language
+4. Match language to {response_language} strictly
 5. Respect dietary restrictions strictly for food activities
 """
 
@@ -696,7 +704,7 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
             preferences = extract_preferences_from_message(last_user_message)
             
             if destination:
-                fast_result = get_fast_itinerary_response(destination, duration, preferences)
+                fast_result = get_fast_itinerary_response(destination, duration, preferences, language=language)
                 if fast_result:
                     return fast_result
             
