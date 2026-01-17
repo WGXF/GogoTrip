@@ -430,6 +430,13 @@ def edit_activities_with_ai(activities: list, instructions: str, plan_context: d
 # ============ Helper functions for Fast Mode ============
 import re
 
+# 🆕 Language code to full name mapping (for AI prompts)
+LANGUAGE_FULL_NAMES = {
+    'en': 'English',
+    'zh': 'Chinese (Simplified)',
+    'ms': 'Bahasa Melayu (Malay)'
+}
+
 def extract_destination_from_message(message: str) -> str:
     """从消息中提取目的地 - 简单启发式"""
     # 常见马来西亚/东南亚城市
@@ -648,13 +655,16 @@ tools_definition = [
     }
 ]
 
-def get_ai_chat_response(conversation_history, credentials_dict, coordinates=None, user_ip=None):
+def get_ai_chat_response(conversation_history, credentials_dict, coordinates=None, user_ip=None, language='en'):
     """
     【AI 代理 - 优化版】
     
     优化策略:
     1. 检测是否是行程规划请求 -> 使用 Fast Mode (无工具调用)
     2. 其他请求 -> 使用标准模式 (带工具调用)
+    
+    参数:
+    - language: 用户首选语言 (en, zh, ms)，AI 将使用此语言回复
     """
     try:
         # 获取最后一条用户消息
@@ -706,10 +716,20 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         else:
             location_info_for_prompt = "用户的当前 GPS 坐标不可用。"
 
+        # 🆕 Get full language name for AI prompt
+        response_language = LANGUAGE_FULL_NAMES.get(language, 'English')
+        
         system_prompt = f"""
 You are GogoTrip AI, a professional intelligent travel planning assistant. 
 Current Date: {today_date}
 User Context: {location_info_for_prompt}
+
+*** CRITICAL: RESPONSE LANGUAGE ***
+You MUST respond in {response_language}. All your responses, recommendations, descriptions, and JSON content MUST be written in {response_language}.
+- If the language is "English", respond in English.
+- If the language is "Chinese (Simplified)", respond in 简体中文.
+- If the language is "Bahasa Melayu (Malay)", respond in Bahasa Melayu.
+This is NON-NEGOTIABLE. The user has selected {response_language} as their preferred language.
 
 *** PREFERENCE ANALYSIS ***
 The user may provide structured preferences (e.g., "Mood: Relaxed", "Budget: Medium", "Dietary: Halal").
@@ -750,9 +770,9 @@ You MUST STRICTLY adhere to these constraints:
 - 如果找到符合的地点，以 [POPUP_DATA::[...]] 格式返回
 - 如果多次搜索仍未找到，诚实告知用户并建议替代方案
 
-*** LANGUAGE ADAPTABILITY ***
-- 用户用中文提问 -> 用中文回复
-- 用户用英文提问 -> 用英文回复
+*** LANGUAGE REMINDER ***
+You MUST respond in {response_language}. This has been set by the user in their preferences.
+Do NOT auto-detect or switch languages based on user input - always use {response_language}.
 
 *** RESPONSE FORMAT ***
 
