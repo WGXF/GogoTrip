@@ -23,12 +23,26 @@ def init_socketio(app):
     from routes.realtime import init_socketio
     socketio = init_socketio(app)
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    
+    Redis Message Queue:
+    - Enables SocketIO to work across multiple worker processes
+    - Required for production with Gunicorn/uWSGI
+    - Set REDIS_URL env var or defaults to localhost:6379
     """
     global socketio
+    
+    # Get Redis URL from config (defaults to None if not set)
+    message_queue = app.config.get('SOCKETIO_MESSAGE_QUEUE')
+    
+    # For local development, default to localhost Redis if available
+    if message_queue is None:
+        message_queue = 'redis://localhost:6379/0'
+    
     socketio = SocketIO(
         app,
         cors_allowed_origins="*",
         async_mode='threading',
+        message_queue=message_queue,
         engineio_logger=False
     )
     
