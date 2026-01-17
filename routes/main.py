@@ -3,11 +3,17 @@ from flask import Blueprint, jsonify
 
 main_bp = Blueprint('main', __name__)
 
-@main_bp.route('/')
-def index():
-    # 以前是返回 HTML 页面，现在 React 接管了前端
-    # 这里只需要返回一个简单的 JSON 告诉我们后端活着就行
+# Root route '/' is now handled by SPA fallback in main_app.py
+# This blueprint only handles API-specific routes
+
+@main_bp.route('/api/health')
+def health_check():
+    """
+    Health check endpoint for monitoring
+    GET /api/health
+    """
     return jsonify({
         "status": "online",
-        "message": "GogoTrip Backend API is running. Please visit localhost:3000 for the frontend."
+        "message": "GogoTrip Backend API is running"
     })
+

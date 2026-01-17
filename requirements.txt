@@ -1,0 +1,66 @@
+# -------------------------------
+# Core Framework
+# -------------------------------
+Flask>=2.3
+Werkzeug>=2.3
+
+# -------------------------------
+# Environment Variables
+# -------------------------------
+python-dotenv>=1.0
+
+# -------------------------------
+# Database
+# -------------------------------
+Flask-SQLAlchemy>=3.1
+SQLAlchemy>=2.0
+
+# Database Drivers (Production)
+psycopg2-binary>=2.9
+# PyMySQL>=1.1  # Uncomment if using MySQL
+
+# -------------------------------
+# Extensions & Utilities
+# -------------------------------
+Flask-Cors>=4.0
+Flask-Login>=0.6.3
+Flask-Admin>=1.6.1
+Flask-Mail>=0.9
+Flask-SocketIO>=5.3.6
+
+# -------------------------------
+# Google Cloud & AI
+# -------------------------------
+google-auth>=2.25
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+google-api-python-client>=2.110
+google-generativeai>=0.3
+
+# Specialized Google Cloud Services (Found in code)
+google-cloud-speech>=2.0.0
+google-cloud-texttospeech>=2.0.0
+google-cloud-translate>=3.0.0
+
+# -------------------------------
+# HTTP & Payment
+# -------------------------------
+requests>=2.31
+# stripe>=5.4.0  # Included per request, though code uses ToyyibPay currently
+
+# -------------------------------
+# Image Processing
+# -------------------------------
+Pillow>=10.0
+gTTS>=2.5.0  # Found in code for simple TTS
+
+# -------------------------------
+# Authentication & Security
+# -------------------------------
+PyJWT>=2.8.0
+
+# -------------------------------
+# Production Server & Async
+# -------------------------------
+gunicorn>=21.2
+eventlet>=0.33.3  # Required for Flask-SocketIO production mode

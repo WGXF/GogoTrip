@@ -1,267 +1,256 @@
 # tools.py
 import requests
 import json
-import time
+import logging
 from datetime import datetime, timedelta
-from models import db, Place
 from flask import current_app
-
-# 从配置导入
 import config
+from models import db, Place, SearchCache
 
-# --- IP Geolocation API Config ---
+# --- API Config ---
 IP_API_URL = "http://ip-api.com/json/"
 
-# --- 工具 1：IP 地理位置查询 (备用) ---
 def get_ip_location_info(ip_address: str = None) -> str:
-    # ... (函数体保持不变) ...
-    if ip_address:
-        print(f"--- TOOL CALLED: get_ip_location_info for {ip_address} ---")
-        url = f"{IP_API_URL}{ip_address}?lang=zh-CN"
-    else:
-        print(f"--- TOOL CALLED: get_ip_location_info (auto-detecting location) ---")
-        url = f"{IP_API_URL}?lang=zh-CN"
+    url = f"{IP_API_URL}{ip_address}?lang=zh-CN" if ip_address else f"{IP_API_URL}?lang=zh-CN"
     try:
-        # ... (其余部分不变) ...
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("status") == "fail": return f"IP 地址查询失败: {data.get('message', '未知')}"
-        return json.dumps({ "ip": data.get('query', ip_address), "country": data.get('country'), "city": data.get('city'), "region": data.get('regionName') })
-    except Exception as e: return f"调用 IP 查询 API 时出错: {e}"
-
-
-# --- 工具 2：天气预报查询 (按城市或坐标) ---
-def get_current_weather(city_or_coords: str) -> str:
-    # ... (函数体保持不变) ...
-    if not config.WEATHERSTACK_ACCESS_KEY or config.WEATHERSTACK_ACCESS_KEY == "YOUR_API_KEY_HERE": return "错误：天气 API 密钥未配置。"
-    print(f"--- TOOL CALLED: get_current_weather for {city_or_coords} ---")
-    try:
-        url = f"{config.WEATHERSTACK_API_URL}current?access_key={config.WEATHERSTACK_ACCESS_KEY}&query={city_or_coords}&units=m"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if 'error' in data: return f"查询 '{city_or_coords}' 天气失败: {data['error']['info']}"
-        return json.dumps({"city": data['location']['name'],"temperature": f"{data['current']['temperature']}°C","description": data['current']['weather_descriptions'][0],"humidity": f"{data['current']['humidity']}%"})
-    except Exception as e: return f"调用 Weatherstack API 时出错: {e}"
-
-def get_coordinates_for_city(city_name: str) -> str:
-    """
-    [新工具]
-    将城市名称 (例如 "吉隆坡" 或 "Kuala Lumpur") 转换为精确的 GPS 坐标 (纬度,经度)。
-    (请确保在 Google Cloud 中启用了 'Geocoding API')
-    """
-    if not config.GOOGLE_MAPS_API_KEY or config.GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY":
-        return "错误：Google Maps API 密钥未在 config.py 中配置。"
-
-    print(f"--- TOOL CALLED: get_coordinates_for_city for {city_name} ---")
-    
-    base_url = "https://maps.googleapis.com/maps/api/geocode/json"
-    params = {
-        "address": city_name,
-        "key": config.GOOGLE_MAPS_API_KEY,
-        "language": "zh-CN"
-    }
-
-    try:
-        response = requests.get(base_url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        if data.get("status") != "OK" or not data.get("results"):
-            return f"未能找到城市 '{city_name}' 的坐标。状态: {data.get('status')}"
-
-        # 提取第一个结果的坐标
-        location = data["results"][0]["geometry"]["location"]
-        lat = location["lat"]
-        lng = location["lng"]
-        
-        result = {
-            "city_name": city_name,
-            "formatted_address": data["results"][0].get("formatted_address", city_name),
-            "location": f"{lat},{lng}"
-        }
-        return json.dumps(result)
-
-    except requests.exceptions.RequestException as e:
-        return f"调用 Geocoding API 时发生网络错误: {e}"
+        resp = requests.get(url, timeout=5)
+        return json.dumps(resp.json(), ensure_ascii=False)
     except Exception as e:
-        return f"处理 Geocoding API 结果时发生未知错误: {e}"
+        return f"IP查询出错: {e}"
 
-# --- [新增] 工具 3：Google Places API 地点搜索 ---
-# tools.py
-# (请确保文件顶部有 import requests, json, config)
+def get_current_weather(city: str) -> str:
+    """Get weather for a city."""
+    if not config.WEATHERSTACK_ACCESS_KEY: return "Err: No Weather Key"
+    try:
+        url = f"{config.WEATHERSTACK_API_URL}current?access_key={config.WEATHERSTACK_ACCESS_KEY}&query={city}&units=m"
+        data = requests.get(url, timeout=5).json()
+        if 'error' in data: return f"天气查询失败: {data['error']['info']}"
+        return json.dumps({
+            "city": data['location']['name'],
+            "temp": f"{data['current']['temperature']}C",
+            "desc": data['current']['weather_descriptions'][0]
+        }, ensure_ascii=False)
+    except Exception as e: return f"天气API出错: {e}"
 
-# tools.py
-# (请确保文件顶部有 import requests, json, config)
+def get_coordinates_for_city(city: str) -> str:
+    """Get lat/lng coordinates for a city name."""
+    if not config.GOOGLE_MAPS_API_KEY: return "Err: No Google Key"
+    try:
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+        data = requests.get(url, params={"address": city, "key": config.GOOGLE_MAPS_API_KEY}, timeout=5).json()
+        if not data.get("results"): return "未找到该城市坐标"
+        loc = data["results"][0]["geometry"]["location"]
+        return json.dumps({"location": f"{loc['lat']},{loc['lng']}"})
+    except Exception as e: return f"Geocode出错: {e}"
+
+def normalize_key(text: str):
+    """标准化字符串，用于缓存 Key 对比"""
+    return text.strip().lower() if text else ""
 
 def save_places_to_db(places_data_list):
     """
-    接收 search_nearby_places 解析后的字典列表，
-    检查数据库是否已存在，如果不存在则存入数据库 (Read-Through Caching 策略的一部分)。
+    【数据入库核心】
+    将 API 返回的原始数据清洗后，强制同步到数据库 Place 表。
+    返回插入/更新的 place_id 列表
     """
-    # 必须在 app_context 下运行数据库操作
-    # 因为 tools.py 被调用时通常是在请求里，所以 current_app 是可用的
-    
-    saved_count = 0
-    try:
-        for p_data in places_data_list:
-            # 1. Google API 的 ID 是最关键的去重标识
-            # 注意：这里的 p_data 是你 search_nearby_places 函数里 parse 好的 clean_details
-            # 但我们需要确保 clean_details 里包含 'id' (Google Place ID)
-            # 你之前的代码只取了 name, address 等，我们需要把 place['id'] 也放进去
-            
-            place_id = p_data.get('google_place_id') 
-            if not place_id:
-                continue
+    if not current_app:
+        print("!!! [DB Error] No Flask App Context")
+        return []
 
-            # 2. 查库：如果已经存在，就跳过 (或者你可以选择更新 update)
-            existing_place = Place.query.filter_by(google_place_id=place_id).first()
+    print(f"--- [DB Sync] 正在同步 {len(places_data_list)} 个地点到数据库... ---")
+    saved_ids = []
+
+    try:
+        for p in places_data_list:
+            pid = p.get('google_place_id')
+            if not pid: continue
+
+            existing_place = Place.query.filter_by(google_place_id=pid).first()
+            coords_str = json.dumps(p.get('coordinates')) if isinstance(p.get('coordinates'), dict) else p.get('coordinates')
             
             if not existing_place:
-                # 3. 清洗数据并创建对象
                 new_place = Place(
-                    google_place_id=place_id,
-                    name=p_data.get('name'),
-                    address=p_data.get('address'),
-                    rating=p_data.get('rating') if isinstance(p_data.get('rating'), (int, float)) else None,
-                    business_status=p_data.get('business_status'),
-                    is_open_now=p_data.get('is_open_now') if isinstance(p_data.get('is_open_now'), bool) else None,
-                    
-                    # 存 JSON
-                    opening_hours=p_data.get('opening_hours_weekday', []),
-                    phone=p_data.get('phone'),
-                    website=p_data.get('website'),
-                    price_level=p_data.get('price_level'),
-                    
-                    # 坐标可能是个字典 {'latitude': ..., 'longitude': ...}，转成字符串存方便点
-                    coordinates=json.dumps(p_data.get('coordinates')),
-                    
-                    photo_reference=p_data.get('photo_reference'),
-                    review_list=p_data.get('review_list', [])
+                    google_place_id=pid,
+                    name=p.get('name'),
+                    address=p.get('address'),
+                    rating=p.get('rating'),
+                    business_status=p.get('business_status'),
+                    is_open_now=p.get('is_open_now'),
+                    opening_hours=p.get('opening_hours_weekday'),
+                    phone=p.get('phone'),
+                    website=p.get('website'),
+                    price_level=p.get('price_level'),
+                    coordinates=coords_str,
+                    photo_reference=p.get('photo_reference'),
+                    review_list=p.get('review_list'),
+                    cached_at=datetime.utcnow()
                 )
-                
                 db.session.add(new_place)
-                saved_count += 1
+                db.session.flush()  # 获取 ID
+                saved_ids.append(new_place.id)
+            else:
+                existing_place.cached_at = datetime.utcnow()
+                # 更新可能变化的字段
+                existing_place.rating = p.get('rating')
+                existing_place.is_open_now = p.get('is_open_now')
+                saved_ids.append(existing_place.id)
         
-        # 4. 提交事务
-        if saved_count > 0:
-            db.session.commit()
-            print(f"--- [DB 缓存] 成功存入 {saved_count} 个新地点到数据库 ---")
-            
+        db.session.commit()
+        print(f"✅ [DB Sync] 完成: 保存 {len(saved_ids)} 个地点。")
+        return saved_ids
+        
     except Exception as e:
-        print(f"--- [DB 错误] 存入地点数据时出错: {e} ---")
-        db.session.rollback() # 出错回滚
+        db.session.rollback()
+        print(f"❌ [DB Error] 入库失败: {str(e)}")
+        return []
 
-def search_nearby_places(query: str, location: str, rank_by: str = "prominence", radius: int = 5000) -> str:
+def fetch_places_from_api(query: str, location: str, radius: int = 5000):
     """
-    [v2.0 性能优化版]
-    利用 FieldMask 一次性获取所有详情，移除 N+1 次循环调用。
+    【纯粹的 API 调用】
+    从 Google Places API 获取数据，不做任何缓存判断
+    返回: 清洗后的地点数据列表
     """
-    if not config.GOOGLE_MAPS_API_KEY or config.GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY":
-        return "错误：Google Maps API 密钥未在 config.py 中配置。"
-
-    print(f"--- TOOL CALLED: search_nearby_places (v2.0 Optimized) ---")
-
-    # ==========================================
-    # Step 1: SearchText (一次性获取 ID 和 详情)
-    # ==========================================
-    search_url = "https://places.googleapis.com/v1/places:searchText"
+    print(f"--- [External API] 正在调用 Google Places API... ---")
     
-    # 在这里直接指定所有需要的字段
-    field_mask = (
-        "places.id,places.displayName,places.formattedAddress,places.rating,"
-        "places.priceLevel,places.location,places.businessStatus,"
-        "places.regularOpeningHours,places.nationalPhoneNumber,"
-        "places.websiteUri,places.photos,places.reviews"
-    )
+    if not config.GOOGLE_MAPS_API_KEY:
+        return []
 
-    search_headers = {
+    url = "https://places.googleapis.com/v1/places:searchText"
+    headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": config.GOOGLE_MAPS_API_KEY,
-        "X-Goog-Fieldmask": field_mask
+        "X-Goog-Fieldmask": "places.id,places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.location,places.businessStatus,places.regularOpeningHours,places.nationalPhoneNumber,places.websiteUri,places.photos,places.reviews"
     }
+    
+    payload = {"textQuery": query, "languageCode": "zh-CN", "maxResultCount": 10}
+    if "," in location:
+        try:
+            lat, lng = map(float, location.split(','))
+            payload["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": radius}}
+        except: pass
 
     try:
-        lat, lon = map(float, location.split(','))
-    except (ValueError, AttributeError):
-        return f"错误：位置参数 '{location}' 格式不正确。必须是 '纬度,经度'。"
+        resp = requests.post(url, headers=headers, json=payload, timeout=10)
+        data = resp.json()
+        places_raw = data.get("places", [])
 
-    search_payload = {
-        "textQuery": query,
-        "locationBias": {
-            "circle": {
-                "center": {"latitude": lat, "longitude": lon},
-                "radius": min(radius, 10000) 
-            }
-        },
-        "languageCode": "zh-CN",
-        "maxResultCount": 10,
-        "rankPreference": "RELEVANCE" if rank_by != "distance" else "DISTANCE"
-    }
+        if not places_raw:
+            return []
 
-    try:
-        print("--- [Step 1] 正在搜索并获取详情... ---")
-        response = requests.post(search_url, headers=search_headers, data=json.dumps(search_payload), timeout=10)
-        response.raise_for_status() 
-        data = response.json()
-        
-        places_found = data.get("places", [])
-        if not places_found:
-            return json.dumps({"message": f"在您附近未能找到与 '{query}' 相关的地点。"}, ensure_ascii=False)
+        # 清洗数据
+        cleaned_list = []
+        for p in places_raw:
+            photo = p.get("photos")[0].get("name") if p.get("photos") else None
+            reviews = [r.get("text", {}).get("text", "") for r in p.get("reviews", [])[:3]]
             
-        # ==========================================
-        # 直接解析数据 (不再需要 Step 2)
-        # ==========================================
-        results = []
-        for place in places_found:
-            try:
-                # 1. 解析营业时间
-                open_hours_data = place.get("regularOpeningHours", {})
-                
-                # 2. 解析评论 (取前3条)
-                review_list = []
-                if place.get("reviews"):
-                    for review in place.get("reviews", [])[:3]:
-                        txt = review.get("text", {}).get("text", "")
-                        if txt:
-                            review_list.append(txt)
-                if not review_list:
-                    review_list = ["暂无评论"]
+            place_obj = {
+                "google_place_id": p.get("id"),
+                "name": p.get("displayName", {}).get("text"),
+                "address": p.get("formattedAddress"),
+                "rating": p.get("rating"),
+                "business_status": p.get("businessStatus"),
+                "is_open_now": p.get("regularOpeningHours", {}).get("openNow"),
+                "opening_hours_weekday": p.get("regularOpeningHours", {}).get("weekdayDescriptions"),
+                "phone": p.get("nationalPhoneNumber"),
+                "website": p.get("websiteUri"),
+                "price_level": p.get("priceLevel"),
+                "coordinates": p.get("location"),
+                "photo_reference": photo,
+                "review_list": reviews
+            }
+            cleaned_list.append(place_obj)
 
-                # 3. 提取照片 ID
-                photo_ref = "N/A"
-                photos = place.get("photos", [])
-                if photos:
-                    photo_ref = photos[0].get("name", "N/A")
-
-                # 4. 构建整洁的字典
-                clean_details = {
-                    "google_place_id": place.get("id"),
-                    "name": place.get("displayName", {}).get("text", "未知名称"),
-                    "address": place.get("formattedAddress", "未知地址"),
-                    "rating": place.get("rating", "N/A"),
-                    "business_status": place.get("businessStatus", "N/A"),
-                    "is_open_now": open_hours_data.get("openNow", "未知"),
-                    "opening_hours_weekday": open_hours_data.get("weekdayDescriptions", []),
-                    "phone": place.get("nationalPhoneNumber", "N/A"),
-                    "website": place.get("websiteUri", "N/A"),
-                    "price_level": place.get("priceLevel", "N/A"),
-                    "coordinates": place.get("location", {}),
-                    "photo_reference": photo_ref,
-                    "review_list": review_list
-                }
-                results.append(clean_details)
-            except Exception as e:
-                print(f"解析单个地点出错: {e}")
-                continue
-
-        if results:
-            save_places_to_db(results)
-
-        print(f"--- [完成] 成功处理 {len(results)} 个地点 ---")
-        return json.dumps(results, ensure_ascii=False)
+        return cleaned_list
 
     except Exception as e:
-        return f"搜索地点时发生错误: {e}"
+        print(f"❌ [API Error] {str(e)}")
+        return []
 
+def query_places_from_db(place_ids: list = None, query_hint: str = None, location: str = None) -> str:
+    """
+    【新增】从数据库查询地点
+    - 如果有 place_ids，直接按 ID 查询
+    - 如果有 query_hint 和 location，进行模糊匹配
+    返回: JSON 字符串，供 AI 筛选
+    """
+    try:
+        if place_ids:
+            places = Place.query.filter(Place.id.in_(place_ids)).all()
+        elif query_hint:
+            # 模糊搜索 (简单版，可以优化为全文搜索)
+            places = Place.query.filter(
+                db.or_(
+                    Place.name.ilike(f"%{query_hint}%"),
+                    Place.address.ilike(f"%{query_hint}%")
+                )
+            ).limit(20).all()
+        else:
+            return json.dumps({"message": "需要提供 place_ids 或 query_hint"})
+
+        if not places:
+            return json.dumps({"message": "数据库中未找到匹配的地点"})
+
+        # 转换为 JSON
+        result = []
+        for place in places:
+            result.append({
+                "id": place.id,
+                "google_place_id": place.google_place_id,
+                "name": place.name,
+                "address": place.address,
+                "rating": place.rating,
+                "business_status": place.business_status,
+                "is_open_now": place.is_open_now,
+                "opening_hours_weekday": place.opening_hours,
+                "phone": place.phone,
+                "website": place.website,
+                "price_level": place.price_level,
+                "coordinates": place.coordinates,
+                "photo_reference": place.photo_reference,
+                "review_list": place.review_list,
+                "cached_at": place.cached_at.isoformat() if place.cached_at else None
+            })
+
+        return json.dumps(result, ensure_ascii=False)
+
+    except Exception as e:
+        return json.dumps({"error": f"数据库查询失败: {str(e)}"})
+
+def search_nearby_places(query: str, location: str, radius: int = 5000) -> str:
+    """
+    【新逻辑 - 分阶段处理】
+    阶段 1: 调用 API 获取数据
+    阶段 2: 存入数据库
+    阶段 3: 返回 "数据已存储" 信号 + place_ids
+    (AI 会接收到这个信号，然后调用 query_places_from_db 进行筛选)
+    """
+    clean_query = normalize_key(query)
+    clean_location = normalize_key(location)
+    
+    if "," in clean_location:
+        try:
+            lat, lng = map(float, clean_location.split(','))
+            clean_location = f"{round(lat, 2)},{round(lng, 2)}"
+        except: pass
+
+    print(f"--- [Tool: Search] 请求: Q='{clean_query}', Loc='{clean_location}' ---")
+
+    # 阶段 1: 获取 API 数据
+    places_data = fetch_places_from_api(query, location, radius)
+    
+    if not places_data:
+        return json.dumps({"message": "未找到任何地点，请尝试不同的关键词"})
+
+    # 阶段 2: 存入数据库
+    saved_ids = save_places_to_db(places_data)
+
+    if not saved_ids:
+        return json.dumps({"error": "数据存储失败"})
+
+    # 阶段 3: 返回信号给 AI，让它调用 query_places_from_db
+    return json.dumps({
+        "status": "data_stored",
+        "message": f"已找到 {len(saved_ids)} 个地点并存入数据库",
+        "place_ids": saved_ids,
+        "hint": "请使用 query_places_from_db 工具从数据库获取详细信息并筛选最符合用户需求的地点"
+    }, ensure_ascii=False)

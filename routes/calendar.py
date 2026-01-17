@@ -2,6 +2,7 @@
 import datetime
 import time
 from flask import Blueprint, request, session, jsonify, redirect, url_for
+from flask_login import login_required, current_user
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from dateutil import parser # 确保安装了: pip install python-dateutil
@@ -95,10 +96,9 @@ def perform_sync_logic(user_id, credentials_dict):
 # 1. 接口：获取本地日程 (前端加载时调用)
 # =========================================================
 @calendar_bp.route('/calendar/events', methods=['GET'])
+@login_required
 def get_local_events():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'error': '未登录'}), 401
+    user_id = current_user.id
 
     try:
         # 只查本地数据库，速度极快
@@ -122,10 +122,11 @@ def get_local_events():
 # 2. 接口：手动触发同步 (点击 Sync 按钮时调用)
 # =========================================================
 @calendar_bp.route('/calendar/sync', methods=['POST'])
+@login_required
 def sync_events_endpoint():
     if 'credentials' not in session:
         return jsonify({'error': '未授权'}), 401
-    user_id = session.get('user_id')
+    user_id = current_user.id
     
     try:
         count = perform_sync_logic(user_id, session['credentials'])
@@ -138,6 +139,7 @@ def sync_events_endpoint():
 # 3. 接口：AI Agent 创建日程 (支持自然语言)
 # =========================================================
 @calendar_bp.route('/create_event', methods=['POST'])
+@login_required
 def create_event_ai():
     """
     这就是你原本的 AI 接口，经过修改以适配数据库架构。
@@ -150,7 +152,7 @@ def create_event_ai():
         # 如果是 API 调用，最好返回 JSON 401，而不是 redirect
         return jsonify({'error': '未授权 Google Calendar'}), 401
 
-    user_id = session.get('user_id')
+    user_id = current_user.id
     
     # 兼容 JSON 请求 (React) 和 Form 请求 (你的旧代码)
     if request.is_json:
@@ -192,10 +194,11 @@ def create_event_ai():
 # 4. 接口：手动删除日程 (可选)
 # =========================================================
 @calendar_bp.route('/calendar/delete/<int:local_id>', methods=['DELETE'])
+@login_required
 def delete_event(local_id):
     if 'credentials' not in session:
         return jsonify({'error': '未授权'}), 401
-    user_id = session.get('user_id')
+    user_id = current_user.id
     
     try:
         # 1. 找本地记录
@@ -220,12 +223,13 @@ def delete_event(local_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@calendar_bp.route('/calendar/add_manual', methods=['POST'])       
+@calendar_bp.route('/calendar/add_manual', methods=['POST'])
+@login_required       
 def add_event_manual():
     if 'credentials' not in session:
         return jsonify({'error': '未授权'}), 401
     
-    user_id = session.get('user_id')
+    user_id = current_user.id
     data = request.json
     
     title = data.get('title')
