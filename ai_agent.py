@@ -43,23 +43,52 @@ def safe_json_loads(text: str):
     - Missing commas between array items
     - Missing commas between object properties
     - Markdown code blocks
-    - Truncated JSON
+    - Extra data after JSON (AI explanations)
     """
-    # 清理 markdown
-    cleaned = text.replace("```json", "").replace("```", "").strip()
+    cleaned = text.strip()
 
-    # 尝试截取 JSON (object or array)
-    if '[' in cleaned and ']' in cleaned:
-        # Array format
-        cleaned = cleaned[cleaned.find('['): cleaned.rfind(']') + 1]
-    elif '{' in cleaned and '}' in cleaned:
-        # Object format
-        cleaned = cleaned[cleaned.find('{'): cleaned.rfind('}') + 1]
+    # 去掉 markdown
+    cleaned = cleaned.replace("```json", "").replace("```", "")
 
-    # 常见 AI 错误修复
-    cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)   # 去 trailing comma
-    cleaned = re.sub(r'}\s*{', '},{', cleaned)         # array item 少逗号
-    cleaned = re.sub(r'"\s*\n\s*"', '",\n"', cleaned)  # object 少逗号
+    # 检测是 array 还是 object
+    array_start = cleaned.find("[")
+    obj_start = cleaned.find("{")
+
+    # 优先处理 array（Fast Mode 大多返回 array）
+    if array_start != -1 and (obj_start == -1 or array_start < obj_start):
+        # Array format - 只取第一个完整 array
+        start = array_start
+        end = cleaned.find("]", start)
+
+        if end == -1:
+            raise ValueError("No valid JSON array found")
+
+        cleaned = cleaned[start:end + 1]
+    elif obj_start != -1:
+        # Object format - 只取第一个完整 object
+        # 需要计数 {} 来找到正确的结束位置
+        start = obj_start
+        count = 0
+        end = -1
+
+        for i in range(start, len(cleaned)):
+            if cleaned[i] == '{':
+                count += 1
+            elif cleaned[i] == '}':
+                count -= 1
+                if count == 0:
+                    end = i
+                    break
+
+        if end == -1:
+            raise ValueError("No valid JSON object found")
+
+        cleaned = cleaned[start:end + 1]
+    else:
+        raise ValueError("No JSON found in text")
+
+    # 防 trailing comma
+    cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
 
     return json.loads(cleaned)
 
