@@ -107,31 +107,380 @@ sys.stderr = LoggerWriter(logging.error)
 
 print("--- App log enabled, now writing to app.log ---")
 
-# ============ FAST MODE: Simplified itinerary generation ============
-def get_fast_itinerary_response(destination: str, duration: str, preferences: dict, language: str = 'en'):
+
+# ============================================================================
+# JSON SCHEMA BUILDERS - Single Source of Truth
+# ============================================================================
+# These functions build final JSON from AI decisions
+# This ensures JSON is ALWAYS valid and structure is centralized
+
+def get_unsplash_image_url(query: str, width: int = 1200, fallback_id: str = None) -> str:
     """
-    快速生成行程 - 不使用工具调用，直接让 AI 生成结构化 JSON
-    用于 MVP 阶段，优先速度而非精确的 place_id 关联
+    Generate Unsplash image URL from search query.
+
+    Args:
+        query: Search query (e.g., "Kuala Lumpur", "Petronas Towers")
+        width: Image width (default 1200)
+        fallback_id: Fallback photo ID if query is empty
+
+    Returns:
+        Unsplash image URL
+    """
+    if not query or query.strip() == '':
+        # Use fallback ID or default
+        photo_id = fallback_id or '1500000000000'
+        return f'https://images.unsplash.com/photo-{photo_id}?w={width}&q=80'
+
+    # Clean query for URL (remove special chars, spaces to hyphens)
+    clean_query = query.strip().lower()
+    clean_query = clean_query.replace(' ', '-').replace(',', '').replace('/', '-')
+
+    # Use Unsplash Source API format (redirects to relevant image)
+    return f'https://source.unsplash.com/{width}x{int(width * 0.6)}/?{clean_query}'
+
+
+def get_destination_cover_image(destination: str, top_locations: list) -> str:
+    """
+    Derive cover image from destination and top locations.
+
+    Strategy:
+    1. Try to use first top location's name
+    2. Fallback to destination name
+    3. Fallback to preset images for common destinations
+
+    Args:
+        destination: Destination name from plan concept
+        top_locations: List of top locations from day 1
+
+    Returns:
+        Cover image URL (Unsplash)
+    """
+    # Preset cover images for common destinations (high-quality photo IDs)
+    DESTINATION_PRESETS = {
+        'kuala lumpur': 'eCflE96eHdw',  # Petronas Towers
+        'kl': 'eCflE96eHdw',
+        'penang': 'WjU7tG0vjWE',  # Georgetown street art
+        'langkawi': 'eO-RglrwKkQ',  # Beach and island
+        'malacca': 'h-IrqGPjD1E',  # Historic building
+        'melaka': 'h-IrqGPjD1E',
+        'singapore': 'ZVprbBmT8QA',  # Marina Bay Sands
+        'bangkok': 'sy3BLN2NZ0c',  # Temples
+        'tokyo': 'URAq7qBiRfU',  # Shibuya crossing
+        'osaka': 'ggYfR-kPbNU',  # Osaka castle
+        'seoul': 'BuZj_K5eUPw',  # Seoul cityscape
+        'taipei': 'Z6b2y31K12c',  # Taipei 101
+        'hong kong': 'G7sE2S4Lab4',  # Hong Kong skyline
+        'bali': 'VZ4zzGP2TIQ',  # Bali temple
+        'phuket': 'eWkuEi26fyQ',  # Phuket beach
+    }
+
+    # Try to use first top location
+    if top_locations and len(top_locations) > 0:
+        first_location = top_locations[0].get('name', '')
+        if first_location:
+            # Check if location matches preset
+            location_lower = first_location.lower()
+            for key, photo_id in DESTINATION_PRESETS.items():
+                if key in location_lower:
+                    return f'https://images.unsplash.com/photo-{photo_id}?w=1200&q=80'
+
+            # Use location name for search
+            return get_unsplash_image_url(first_location, width=1200)
+
+    # Fallback to destination
+    if destination:
+        destination_lower = destination.lower()
+
+        # Check presets
+        for key, photo_id in DESTINATION_PRESETS.items():
+            if key in destination_lower:
+                return f'https://images.unsplash.com/photo-{photo_id}?w=1200&q=80'
+
+        # Use destination name for search
+        return get_unsplash_image_url(destination, width=1200)
+
+    # Ultimate fallback
+    return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80'  # Generic travel
+
+
+def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
+    """
+    Build daily plan JSON from AI decisions.
+
+    Args:
+        decisions: AI decision object with plan_concept, daily_decisions, etc.
+        preferences: User preferences dict
+
+    Returns:
+        Complete daily plan JSON matching frontend schema
+    """
+    plan_concept = decisions.get('plan_concept', {})
+    daily_decisions = decisions.get('daily_decisions', [])
+
+    # Calculate total budget
+    total_budget_min = 0
+    total_budget_max = 0
+    for day in daily_decisions:
+        for place in day.get('selected_places', []):
+            budget_str = place.get('budget', 'RM 0')
+            try:
+                amount = float(budget_str.replace('RM', '').strip())
+                total_budget_min += amount * 0.8
+                total_budget_max += amount * 1.2
+            except:
+                pass
+
+    total_budget_estimate = f"RM {int(total_budget_min)} - RM {int(total_budget_max)}"
+
+    # Extract tags
+    tags = []
+    if preferences.get('mood'):
+        tags.append(preferences['mood'])
+    if preferences.get('budget'):
+        tags.append(preferences['budget'])
+    tags.extend(plan_concept.get('key_attractions', [])[:2])
+
+    # Build days array
+    days = []
+    today = datetime.date.today()
+
+    for idx, day_decision in enumerate(daily_decisions):
+        day_date = (today + datetime.timedelta(days=idx)).isoformat()
+
+        # Build activities from selected places
+        activities = []
+        current_time = datetime.time(9, 0)  # Start at 9 AM
+
+        for place in day_decision.get('selected_places', []):
+            duration_hours = place.get('duration_hours', 2)
+            end_time_delta = datetime.timedelta(hours=duration_hours)
+
+            # Convert time to datetime for calculation
+            current_datetime = datetime.datetime.combine(today, current_time)
+            end_datetime = current_datetime + end_time_delta
+
+            # Determine time_slot
+            hour = current_time.hour
+            if hour < 12:
+                time_slot = 'morning'
+            elif hour < 14:
+                time_slot = 'lunch'
+            elif hour < 18:
+                time_slot = 'afternoon'
+            elif hour < 21:
+                time_slot = 'evening'
+            else:
+                time_slot = 'night'
+
+            activity = {
+                'time_slot': time_slot,
+                'start_time': current_time.strftime('%H:%M'),
+                'end_time': end_datetime.time().strftime('%H:%M'),
+                'place_id': None,  # Will be linked later
+                'place_name': place.get('name', ''),
+                'place_address': place.get('address', 'Address not specified'),
+                'activity_type': place.get('activity_type', 'attraction'),
+                'description': place.get('reason', ''),
+                'budget_estimate': place.get('budget', 'RM 50'),
+                'tips': place.get('tips', ''),
+                'dietary_info': place.get('dietary_info', '')
+            }
+            activities.append(activity)
+
+            # Move to next time slot
+            current_time = (end_datetime + datetime.timedelta(minutes=30)).time()
+
+        # Calculate day summary
+        day_budget = sum(
+            float(place.get('budget', 'RM 0').replace('RM', '').strip())
+            for place in day_decision.get('selected_places', [])
+            if place.get('budget')
+        )
+
+        # Build top_locations with derived images
+        top_locations = []
+        for place in day_decision.get('selected_places', [])[:3]:
+            place_name = place.get('name', '')
+            top_locations.append({
+                'place_id': None,
+                'name': place_name,
+                'image_url': get_unsplash_image_url(place_name, width=800),
+                'highlight_reason': place.get('reason', '')
+            })
+
+        day = {
+            'day_number': idx + 1,
+            'date': day_date,
+            'theme': day_decision.get('theme', f'Day {idx + 1}'),
+            'top_locations': top_locations,
+            'activities': activities,
+            'day_summary': {
+                'total_activities': len(activities),
+                'total_budget': f'RM {int(day_budget)}',
+                'transport_notes': day_decision.get('transport_notes', 'Use public transport or Grab')
+            }
+        }
+        days.append(day)
+
+    # Derive cover image from destination and top locations
+    destination = plan_concept.get('title', 'Travel Itinerary')
+    first_day_top_locations = days[0]['top_locations'] if days else []
+    cover_image = get_destination_cover_image(destination, first_day_top_locations)
+
+    # Build final JSON
+    return {
+        'type': 'daily_plan',
+        'title': destination,
+        'description': plan_concept.get('theme', 'Exciting travel adventure'),
+        'duration': f"{len(daily_decisions)}D{len(daily_decisions)-1}N" if len(daily_decisions) > 1 else '1D',
+        'total_budget_estimate': total_budget_estimate,
+        'tags': tags[:5],
+        'cover_image': cover_image,
+        'user_preferences_applied': {
+            'mood': preferences.get('mood', 'relaxed'),
+            'budget': preferences.get('budget', 'medium'),
+            'transport': preferences.get('transport', 'public'),
+            'dietary': preferences.get('dietary', [])
+        },
+        'days': days,
+        'practical_info': {
+            'best_transport': decisions.get('transport_recommendation', 'Public transport recommended'),
+            'weather_advisory': decisions.get('weather_advisory', 'Check weather before departure'),
+            'booking_recommendations': decisions.get('practical_tips', [])
+        }
+    }
+
+
+def build_food_recommendations_json(decisions: dict, preferences: dict) -> dict:
+    """
+    Build food recommendations JSON from AI decisions.
+
+    Args:
+        decisions: AI decision object with recommendations list
+        preferences: User preferences dict
+
+    Returns:
+        Complete food recommendations JSON matching frontend schema
+    """
+    recommendations = []
+
+    for rec in decisions.get('recommendations', []):
+        # Map price estimate to price level
+        price_str = rec.get('price_estimate', 'RM 20')
+        try:
+            price = float(price_str.replace('RM', '').strip().split('-')[0])
+            if price < 15:
+                price_level = 1
+            elif price < 40:
+                price_level = 2
+            elif price < 80:
+                price_level = 3
+            else:
+                price_level = 4
+        except:
+            price_level = 2
+
+        # Extract dietary tags
+        dietary_tags = []
+        if preferences.get('dietary'):
+            dietary_tags = preferences['dietary']
+
+        recommendation = {
+            'name': rec.get('name', 'Restaurant'),
+            'cuisine_type': rec.get('cuisine_type', 'Various'),
+            'address': rec.get('address', 'Address not available'),
+            'rating': rec.get('rating', 4.0),
+            'price_level': price_level,
+            'description': rec.get('reason_to_visit', ''),
+            'dietary_tags': dietary_tags,
+            'is_open_now': rec.get('is_open_now', True),
+            'signature_dishes': rec.get('signature_dishes', [rec.get('signature_dish_suggestion', 'Special dish')]),
+            'tips': rec.get('tips', ''),
+            'distance': rec.get('distance', '1km')
+        }
+        recommendations.append(recommendation)
+
+    return {
+        'success': True,
+        'recommendations': recommendations,
+        'preferences_applied': {
+            'cuisine': preferences.get('cuisine', []),
+            'mood': preferences.get('mood', 'casual'),
+            'budget': preferences.get('budget', 'medium'),
+            'dietary': preferences.get('dietary', []),
+            'meal_type': preferences.get('mealType', 'lunch')
+        },
+        'general_tips': decisions.get('general_tips', [])
+    }
+
+
+def build_activity_edit_json(decisions: dict) -> dict:
+    """
+    Build activity edit JSON from AI decisions.
+
+    Args:
+        decisions: AI decision object with updated_activities list
+
+    Returns:
+        Activity edit JSON matching frontend schema
+    """
+    if decisions.get('success') == False:
+        return {
+            'success': False,
+            'error': decisions.get('error', 'Unknown error')
+        }
+
+    updated_activities = []
+    for activity_decision in decisions.get('updated_activities', []):
+        activity = {
+            'day_index': activity_decision.get('day_index', 0),
+            'activity_index': activity_decision.get('activity_index', 0),
+            'activity': activity_decision.get('activity', {})
+        }
+        updated_activities.append(activity)
+
+    return {
+        'success': True,
+        'updated_activities': updated_activities
+    }
+
+
+# ============================================================================
+# NEW DECISION-BASED AI FUNCTIONS
+# ============================================================================
+# AI makes decisions only, backend builds JSON
+
+def get_itinerary_decisions(destination: str, duration: str, preferences: dict, language: str = 'en') -> dict:
+    """
+    Get AI decisions for itinerary (decisions only, NO JSON structure).
+
+    Args:
+        destination: Travel destination
+        duration: Trip duration (e.g., "3D2N")
+        preferences: User preferences dict
+        language: User's preferred language
+
+    Returns:
+        Decision object with plan_concept, daily_decisions, tips
     """
     try:
         genai.configure(api_key=config.GEMINI_API_KEY)
-        
+
         today_date = datetime.date.today().isoformat()
-        
+
         # Extract preferences
         mood = preferences.get('mood', 'relaxed')
         budget = preferences.get('budget', 'medium')
         transport = preferences.get('transport', 'public')
         dietary = preferences.get('dietary', [])
         companions = preferences.get('companions', 'friends')
-        
+
         # Determine activities per day based on mood
         activities_per_day = "3-4" if mood in ['relaxed', 'family'] else "5-6"
-        
-        # 🆕 Get full language name
-        response_language = LANGUAGE_FULL_NAMES.get(language, 'English')
-        
-        fast_prompt = f"""Generate a {duration} travel itinerary for {destination}.
+
+        decision_prompt = f"""{get_language_instruction(language)}
+
+Generate travel planning decisions for a {duration} trip to {destination}.
 
 USER PREFERENCES:
 - Mood: {mood} ({activities_per_day} activities per day)
@@ -140,143 +489,110 @@ USER PREFERENCES:
 - Dietary: {', '.join(dietary) if dietary else 'No restrictions'}
 - Traveling with: {companions}
 
-*** CRITICAL: RESPONSE LANGUAGE ***
-You MUST respond in {response_language}. All title, description, and content MUST be written in {response_language}.
-- If "Chinese (Simplified)", use 简体中文.
-- If "Bahasa Melayu (Malay)", use Bahasa Melayu.
+YOUR ROLE: Make decisions about:
+1. Which places to visit
+2. Order and grouping of activities
+3. Themes for each day
+4. Budget estimates
+5. Practical tips
 
-OUTPUT: Return ONLY valid JSON (no markdown, no explanation). Start with {{
+*** IMPORTANT: DO NOT generate conversational introductions ***
+Do NOT say things like "I've created a plan for you" or "Here's your itinerary".
+ONLY return the decision JSON object. NO conversational text.
 
-JSON SCHEMA:
+Return DECISION OBJECT (NOT final UI JSON):
 {{
-  "type": "daily_plan",
-  "title": "Trip title in user's language",
-  "description": "Brief description",
-  "duration": "{duration}",
-  "total_budget_estimate": "RM X - RM Y",
-  "tags": ["tag1", "tag2", "tag3"],
-  "cover_image": "https://images.unsplash.com/photo-RELEVANT_DESTINATION_PHOTO",
-  "user_preferences_applied": {{
-    "mood": "{mood}",
-    "budget": "{budget}",
-    "transport": "{transport}",
-    "dietary": {json.dumps(dietary)}
+  "plan_concept": {{
+    "title": "Trip title in user's language",
+    "theme": "Overall theme/concept",
+    "key_attractions": ["Main attraction 1", "Main attraction 2"]
   }},
-  "days": [
+  "daily_decisions": [
     {{
-      "day_number": 1,
-      "date": "{today_date}",
-      "theme": "Day theme",
-      "top_locations": [
-        {{"place_id": null, "name": "Place Name", "image_url": "https://...", "highlight_reason": "Why visit"}}
-      ],
-      "activities": [
+      "day": 1,
+      "theme": "Day theme in user's language",
+      "selected_places": [
         {{
-          "time_slot": "morning|lunch|afternoon|evening|night",
-          "start_time": "HH:MM",
-          "end_time": "HH:MM",
-          "place_id": null,
-          "place_name": "Place Name",
-          "place_address": "Address",
-          "activity_type": "attraction|food|cafe|hotel|shopping|transport",
-          "description": "What to do",
-          "budget_estimate": "RM X",
-          "tips": "Optional tip",
-          "dietary_info": "If food, note dietary compliance"
+          "name": "Place Name",
+          "address": "Full address",
+          "reason": "Why visit this place",
+          "activity_type": "attraction|food|cafe|shopping",
+          "time_suggestion": "morning|afternoon|evening",
+          "duration_hours": 2.0,
+          "budget": "RM 30",
+          "tips": "Optional tips",
+          "dietary_info": "If food-related"
         }}
       ],
-      "day_summary": {{
-        "total_activities": N,
-        "total_budget": "RM X",
-        "transport_notes": "How to get around"
-      }}
+      "transport_notes": "How to get around today"
     }}
   ],
-  "practical_info": {{
-    "best_transport": "Recommended transport",
-    "weather_advisory": "Weather tips",
-    "booking_recommendations": ["Tip 1", "Tip 2"]
-  }}
+  "transport_recommendation": "Best overall transport method",
+  "weather_advisory": "Weather tips for this season",
+  "practical_tips": ["Tip 1", "Tip 2"]
 }}
-
-RULES:
-1. Use REAL place names and addresses for {destination}
-2. place_id can be null (will be linked later)
-3. Be concise - focus on key information
-4. Match language to {response_language} strictly
-5. Respect dietary restrictions strictly for food activities
 
 CRITICAL JSON RULES:
 - Use DOUBLE QUOTES only
 - Do NOT include comments
-- Do NOT include "or []" or explanations
 - Do NOT use emojis in JSON values
 - Every comma must be correctly placed
-- No trailing commas before }} or ]]
+- No trailing commas before }} or ]
 - Validate JSON before returning
 """
 
         model = genai.GenerativeModel(
-            model_name='gemini-2.0-flash',  # Faster model
+            model_name='gemini-2.0-flash',
             generation_config={
-                "temperature": 0.3,  # Lower = faster, more deterministic
+                "temperature": 0.3,
                 "max_output_tokens": 4096
             }
         )
-        
-        response = model.generate_content(fast_prompt)
+
+        response = model.generate_content(decision_prompt)
 
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
 
             try:
-                # 使用 safe_json_loads 解析
-                parsed = safe_json_loads(ai_text)
-
-                if parsed.get("type") == "daily_plan":
-                    print("--- [Fast Mode] 成功生成行程 ---")
-                    return f"DAILY_PLAN::{json.dumps(parsed)}"
+                decisions = safe_json_loads(ai_text)
+                print(f"--- [Itinerary Decisions] Success for {destination} ---")
+                return decisions
             except Exception as e:
-                # Retry once if JSON parsing fails
-                print(f"--- [Fast Mode] JSON invalid, retrying once... Error: {e} ---")
-
+                # Retry once
+                print(f"--- [Itinerary Decisions] JSON invalid, retrying... Error: {e} ---")
                 try:
-                    retry_response = model.generate_content(fast_prompt)
-                    if retry_response.candidates and retry_response.candidates[0].content.parts:
-                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
-                        parsed = safe_json_loads(retry_text)
-
-                        if parsed.get("type") == "daily_plan":
-                            print("--- [Fast Mode] Retry 成功生成行程 ---")
-                            return f"DAILY_PLAN::{json.dumps(parsed)}"
+                    retry_response = model.generate_content(decision_prompt)
+                    retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                    decisions = safe_json_loads(retry_text)
+                    print(f"--- [Itinerary Decisions] Retry success ---")
+                    return decisions
                 except Exception as retry_error:
-                    print(f"--- [Fast Mode] Retry failed: {retry_error} ---")
+                    print(f"--- [Itinerary Decisions] Retry failed: {retry_error} ---")
                     return None
-        
+
         return None
-        
+
     except Exception as e:
-        print(f"--- [Fast Mode Error] {e} ---")
+        print(f"--- [Itinerary Decisions Error] {e} ---")
         return None
 
 
-# ============ Fast Food Recommendations ============
-
-def get_fast_food_recommendations(preferences: dict, location: str = None):
+def get_food_decisions(preferences: dict, location: str = None, language: str = 'en') -> dict:
     """
-    快速生成美食推荐 - 专门用于 Food Wizard
-    比完整行程规划更快更简单
-    
-    参数:
-    - preferences: 用户偏好 (cuisine, mood, budget, dietary, mealType, distance)
-    - location: 用户位置 (可选, 格式: "lat,lng" 或城市名)
-    
-    返回:
-    - FOOD_RECOMMENDATIONS:: 前缀的 JSON 字符串
+    Get AI decisions for food recommendations (decisions only, NO JSON structure).
+
+    Args:
+        preferences: User preferences dict
+        location: User location
+        language: User's preferred language
+
+    Returns:
+        Decision object with recommendations list
     """
     try:
         genai.configure(api_key=config.GEMINI_API_KEY)
-        
+
         # Extract preferences
         cuisine = preferences.get('cuisine', [])
         mood = preferences.get('mood', 'casual')
@@ -284,7 +600,7 @@ def get_fast_food_recommendations(preferences: dict, location: str = None):
         dietary = preferences.get('dietary', [])
         meal_type = preferences.get('mealType', 'lunch')
         distance = preferences.get('distance', '5')
-        
+
         # Map budget to price range
         budget_map = {
             'low': 'under RM 15 per person',
@@ -293,7 +609,7 @@ def get_fast_food_recommendations(preferences: dict, location: str = None):
             'luxury': 'RM 80+ per person (fine dining)'
         }
         budget_desc = budget_map.get(budget, 'RM 15-40 per person')
-        
+
         # Map mood to dining style
         mood_map = {
             'quick': 'fast casual, quick service, takeaway-friendly',
@@ -302,12 +618,14 @@ def get_fast_food_recommendations(preferences: dict, location: str = None):
             'group': 'spacious, good for groups, shareable dishes'
         }
         mood_desc = mood_map.get(mood, 'casual dining')
-        
-        location_context = f"near {location}" if location else "in the area"
+
+        location_context = f"near {location}" if location else "in Malaysia"
         cuisine_context = f"focusing on {', '.join(cuisine)} cuisine" if cuisine else "any cuisine type"
         dietary_context = f"MUST be {', '.join(dietary)}" if dietary else "no dietary restrictions"
-        
-        food_prompt = f"""You are a local food expert. Recommend 5-8 restaurants/food places based on these preferences.
+
+        food_decision_prompt = f"""{get_language_instruction(language)}
+
+You are a local food expert. Make decisions about which restaurants to recommend.
 
 USER PREFERENCES:
 - Meal: {meal_type}
@@ -318,38 +636,44 @@ USER PREFERENCES:
 - Location: {location_context}
 - Max distance: {distance}km
 
-OUTPUT: Return ONLY valid JSON array (no markdown, no explanation). Start with [
+YOUR ROLE: Decide which 5-8 restaurants match the user's preferences and explain why.
 
-Each restaurant object must have:
+*** IMPORTANT: DO NOT generate conversational introductions ***
+Do NOT say things like "I found X restaurants for you" or "Here are my recommendations".
+ONLY return the decision JSON object. NO conversational text.
+
+Return DECISION OBJECT (NOT final UI JSON):
 {{
-  "name": "Restaurant Name",
-  "cuisine_type": "Chinese/Japanese/Malay/Western/etc",
-  "address": "Full address",
-  "rating": 4.5,
-  "price_level": 2,
-  "description": "Why this place is great for the user's mood/occasion (1-2 sentences)",
-  "dietary_tags": ["Halal", "Vegetarian"],
-  "is_open_now": true,
-  "signature_dishes": ["Dish 1", "Dish 2"],
-  "tips": "Best time to visit or ordering tips",
-  "distance": "1.2km"
+  "recommendations": [
+    {{
+      "name": "Restaurant Name",
+      "cuisine_type": "Chinese/Japanese/Malay/Western/etc",
+      "address": "Full address",
+      "rating": 4.5,
+      "price_estimate": "RM 20-40",
+      "reason_to_visit": "Why this matches user's preferences (2-3 sentences)",
+      "is_open_now": true,
+      "signature_dish_suggestion": "Best dish to order",
+      "signature_dishes": ["Dish 1", "Dish 2"],
+      "tips": "Best time to visit or ordering tips",
+      "distance": "1.2km"
+    }}
+  ],
+  "general_tips": ["Tip 1", "Tip 2"]
 }}
 
 RULES:
 1. Use REAL restaurant names that exist in Malaysia/the specified location
-2. Match the user's budget strictly (price_level: 1=$, 2=$$, 3=$$$, 4=$$$$)
+2. Match the user's budget strictly
 3. If dietary restrictions specified, ONLY include compliant restaurants
 4. Sort by relevance to user's mood/preferences
-5. Provide actionable tips (what to order, when to go)
-6. Be concise but helpful
 
 CRITICAL JSON RULES:
 - Use DOUBLE QUOTES only
 - Do NOT include comments
-- Do NOT include "or []" or explanations
 - Do NOT use emojis in JSON values
 - Every comma must be correctly placed
-- No trailing commas before }} or ]]
+- No trailing commas
 - Validate JSON before returning
 """
 
@@ -360,147 +684,125 @@ CRITICAL JSON RULES:
                 "max_output_tokens": 2048
             }
         )
-        
-        response = model.generate_content(food_prompt)
+
+        response = model.generate_content(food_decision_prompt)
 
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
 
             try:
-                # 使用 safe_json_loads 解析
-                parsed = safe_json_loads(ai_text)
-
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    print(f"--- [Food Recommendations] Generated {len(parsed)} recommendations ---")
-                    return {
-                        "success": True,
-                        "recommendations": parsed,
-                        "preferences_applied": {
-                            "cuisine": cuisine,
-                            "mood": mood,
-                            "budget": budget,
-                            "dietary": dietary,
-                            "meal_type": meal_type
-                        }
-                    }
+                decisions = safe_json_loads(ai_text)
+                if isinstance(decisions.get('recommendations'), list):
+                    print(f"--- [Food Decisions] Generated {len(decisions['recommendations'])} recommendations ---")
+                    return decisions
             except Exception as e:
-                # Retry once if JSON parsing fails
-                print(f"--- [Food Recommendations] JSON invalid, retrying once... Error: {e} ---")
-
+                # Retry once
+                print(f"--- [Food Decisions] JSON invalid, retrying... Error: {e} ---")
                 try:
-                    retry_response = model.generate_content(food_prompt)
-                    if retry_response.candidates and retry_response.candidates[0].content.parts:
-                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
-                        parsed = safe_json_loads(retry_text)
-
-                        if isinstance(parsed, list) and len(parsed) > 0:
-                            print(f"--- [Food Recommendations] Retry 成功生成 {len(parsed)} recommendations ---")
-                            return {
-                                "success": True,
-                                "recommendations": parsed,
-                                "preferences_applied": {
-                                    "cuisine": cuisine,
-                                    "mood": mood,
-                                    "budget": budget,
-                                    "dietary": dietary,
-                                    "meal_type": meal_type
-                                }
-                            }
+                    retry_response = model.generate_content(food_decision_prompt)
+                    retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                    decisions = safe_json_loads(retry_text)
+                    print(f"--- [Food Decisions] Retry success ---")
+                    return decisions
                 except Exception as retry_error:
-                    print(f"--- [Food Recommendations] Retry failed: {retry_error} ---")
+                    print(f"--- [Food Decisions] Retry failed: {retry_error} ---")
+                    return None
 
-                return {
-                    "success": False,
-                    "error": "AI returned invalid JSON"
-                }
-        
-        return {
-            "success": False,
-            "error": "AI did not return valid recommendations"
-        }
-        
+        return None
+
     except Exception as e:
-        print(f"--- [Food Recommendations Error] {e} ---")
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        print(f"--- [Food Decisions Error] {e} ---")
+        return None
 
 
-# ============ AI Edit Activities Function ============
-
-def edit_activities_with_ai(activities: list, instructions: str, plan_context: dict = None):
+def get_activity_edit_decisions(activities: list, instructions: str, plan_context: dict = None, language: str = 'en') -> dict:
     """
-    使用 AI 批量编辑活动
-    
-    参数:
-    - activities: 要编辑的活动列表 [{day_index, activity_index, activity}, ...]
-    - instructions: 用户的编辑指令
-    - plan_context: 行程上下文信息 (可选)
-    
-    返回:
-    - 编辑后的活动列表 [{day_index, activity_index, activity}, ...]
+    Get AI decisions for activity edits (decisions only, NO JSON structure).
+
+    Args:
+        activities: Activities to edit
+        instructions: User's edit instructions
+        plan_context: Plan context (optional)
+        language: User's preferred language
+
+    Returns:
+        Decision object with updated_activities list
     """
     try:
         genai.configure(api_key=config.GEMINI_API_KEY)
-        
+
         # Build context string
         context_str = ""
         if plan_context:
             context_str = f"""
-行程背景:
-- 标题: {plan_context.get('title', 'N/A')}
-- 目的地: {plan_context.get('destination', 'N/A')}
-- 用户偏好: {json.dumps(plan_context.get('preferences', {}), ensure_ascii=False)}
+Trip Context:
+- Title: {plan_context.get('title', 'N/A')}
+- Destination: {plan_context.get('destination', 'N/A')}
+- User Preferences: {json.dumps(plan_context.get('preferences', {}), ensure_ascii=False)}
 """
-        
+
         # Format activities for the prompt
         activities_json = json.dumps(activities, ensure_ascii=False, indent=2)
-        
-        edit_prompt = f"""你是一个旅行行程编辑助手。用户选择了以下活动，希望你按照指令修改它们。
+
+        edit_decision_prompt = f"""{get_language_instruction(language)}
+
+You are a travel itinerary editor. The user has selected activities and wants you to modify them according to their instructions.
 
 {context_str}
 
-## 选中的活动:
+## Selected Activities:
 ```json
 {activities_json}
 ```
 
-## 用户指令:
+## User Instructions:
 {instructions}
 
-## 任务:
-根据用户指令修改这些活动，并返回修改后的完整活动列表。
+## YOUR TASK:
+Modify these activities according to the user's instructions.
 
-## 重要规则:
-1. 保持 JSON 结构完全相同
-2. 保留 day_index 和 activity_index 字段（用于前端更新）
-3. 只修改用户要求修改的内容
-4. 保持其他字段不变（除非用户明确要求修改）
-5. 如果涉及时间修改，确保时间格式为 "HH:MM"
-6. 如果涉及餐厅/地点更换，使用真实存在的地点名称
+*** IMPORTANT: DO NOT generate conversational introductions ***
+Do NOT say things like "I've updated the activities" or "Here are the changes".
+ONLY return the decision JSON object. NO conversational text.
 
-## 输出格式:
-直接返回 JSON 数组（不要 markdown 标记），格式如下：
-[
-  {{
-    "day_index": 0,
-    "activity_index": 1,
-    "activity": {{
-      "time_slot": "morning",
-      "start_time": "09:00",
-      "end_time": "11:00",
-      "place_id": null,
-      "place_name": "地点名称",
-      "place_address": "地址",
-      "activity_type": "attraction",
-      "description": "描述",
-      "budget_estimate": "RM 50",
-      "tips": "小贴士",
-      "dietary_info": "饮食信息"
+Return DECISION OBJECT (NOT final UI JSON):
+{{
+  "updated_activities": [
+    {{
+      "day_index": 0,
+      "activity_index": 1,
+      "activity": {{
+        "time_slot": "morning",
+        "start_time": "09:00",
+        "end_time": "11:00",
+        "place_id": null,
+        "place_name": "Place Name",
+        "place_address": "Address",
+        "activity_type": "attraction",
+        "description": "Description in user's language",
+        "budget_estimate": "RM 50",
+        "tips": "Tips in user's language",
+        "dietary_info": "Dietary info if applicable"
+      }}
     }}
-  }}
-]
+  ]
+}}
+
+IMPORTANT RULES:
+1. Keep JSON structure identical
+2. Preserve day_index and activity_index fields
+3. Only modify what user requested
+4. Keep other fields unchanged unless explicitly requested
+5. If time changes needed, use "HH:MM" format
+6. If place changes needed, use real place names
+
+CRITICAL JSON RULES:
+- Use DOUBLE QUOTES only
+- Do NOT include comments
+- Do NOT use emojis in JSON values
+- Every comma must be correctly placed
+- No trailing commas
+- Validate JSON before returning
 """
 
         model = genai.GenerativeModel(
@@ -510,63 +812,220 @@ def edit_activities_with_ai(activities: list, instructions: str, plan_context: d
                 "max_output_tokens": 4096
             }
         )
-        
-        response = model.generate_content(edit_prompt)
+
+        response = model.generate_content(edit_decision_prompt)
 
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
 
             try:
-                # 使用 safe_json_loads 解析
-                parsed = safe_json_loads(ai_text)
-
-                if isinstance(parsed, list):
-                    print(f"--- [AI Edit] 成功修改 {len(parsed)} 个活动 ---")
-                    return {
-                        "success": True,
-                        "updated_activities": parsed
-                    }
+                decisions = safe_json_loads(ai_text)
+                if isinstance(decisions.get('updated_activities'), list):
+                    print(f"--- [Activity Edit Decisions] Modified {len(decisions['updated_activities'])} activities ---")
+                    return {'success': True, 'updated_activities': decisions['updated_activities']}
             except Exception as e:
-                # Retry once if JSON parsing fails
-                print(f"--- [AI Edit] JSON invalid, retrying once... Error: {e} ---")
-
+                # Retry once
+                print(f"--- [Activity Edit Decisions] JSON invalid, retrying... Error: {e} ---")
                 try:
-                    retry_response = model.generate_content(edit_prompt)
-                    if retry_response.candidates and retry_response.candidates[0].content.parts:
-                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
-                        parsed = safe_json_loads(retry_text)
-
-                        if isinstance(parsed, list):
-                            print(f"--- [AI Edit] Retry 成功修改 {len(parsed)} 个活动 ---")
-                            return {
-                                "success": True,
-                                "updated_activities": parsed
-                            }
+                    retry_response = model.generate_content(edit_decision_prompt)
+                    retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                    decisions = safe_json_loads(retry_text)
+                    print(f"--- [Activity Edit Decisions] Retry success ---")
+                    return {'success': True, 'updated_activities': decisions['updated_activities']}
                 except Exception as retry_error:
-                    print(f"--- [AI Edit] Retry failed: {retry_error} ---")
-        
-        return {
-            "success": False,
-            "error": "AI 未能生成有效的修改结果"
-        }
-        
+                    print(f"--- [Activity Edit Decisions] Retry failed: {retry_error} ---")
+                    return {'success': False, 'error': 'AI failed to generate valid edits'}
+
+        return {'success': False, 'error': 'No response from AI'}
+
     except Exception as e:
-        print(f"--- [AI Edit Error] {e} ---")
+        print(f"--- [Activity Edit Decisions Error] {e} ---")
+        return {'success': False, 'error': str(e)}
+
+
+# ============ FAST MODE: Simplified itinerary generation ============
+def get_fast_itinerary_response(destination: str, duration: str, preferences: dict, language: str = 'en'):
+    """
+    ✅ REFACTORED: Now uses decision-based architecture
+
+    AI generates decisions → Backend builds JSON → Always valid
+
+    Args:
+        destination: Travel destination
+        duration: Trip duration (e.g., "3D2N")
+        preferences: User preferences dict
+        language: User's preferred language
+
+    Returns:
+        DAILY_PLAN:: prefix + JSON string (for backwards compatibility)
+    """
+    try:
+        # Get AI decisions
+        decisions = get_itinerary_decisions(destination, duration, preferences, language)
+
+        if not decisions:
+            print("--- [Fast Mode] AI decisions failed ---")
+            return None
+
+        # Build final JSON from decisions
+        final_json = build_daily_plan_json(decisions, preferences)
+
+        print("--- [Fast Mode] Successfully generated itinerary with new architecture ---")
+        return f"DAILY_PLAN::{json.dumps(final_json)}"
+
+    except Exception as e:
+        print(f"--- [Fast Mode Error] {e} ---")
+        return None
+
+
+# ============ Fast Food Recommendations ============
+
+def get_fast_food_recommendations(preferences: dict, location: str = None, language: str = 'en'):
+    """
+    ✅ REFACTORED: Now uses decision-based architecture
+
+    AI generates decisions → Backend builds JSON → Always valid
+
+    Args:
+        preferences: User preferences dict
+        location: User location
+        language: User's preferred language
+
+    Returns:
+        Food recommendations JSON (for backwards compatibility)
+    """
+    try:
+        # Get AI decisions
+        decisions = get_food_decisions(preferences, location, language)
+
+        if not decisions:
+            print("--- [Food Recommendations] AI decisions failed ---")
+            return {
+                "success": False,
+                "error": "AI failed to generate recommendations"
+            }
+
+        # Build final JSON from decisions
+        final_json = build_food_recommendations_json(decisions, preferences)
+
+        print("--- [Food Recommendations] Successfully generated with new architecture ---")
+        return final_json
+
+    except Exception as e:
+        print(f"--- [Food Recommendations Error] {e} ---")
         return {
             "success": False,
             "error": str(e)
         }
 
 
-# ============ Helper functions for Fast Mode ============
-import re
+def edit_activities_with_ai(activities: list, instructions: str, plan_context: dict = None, language: str = 'en'):
+    """
+    ✅ REFACTORED: Now uses decision-based architecture
 
-# 🆕 Language code to full name mapping (for AI prompts)
-LANGUAGE_FULL_NAMES = {
-    'en': 'English',
-    'zh': 'Chinese (Simplified)',
-    'ms': 'Bahasa Melayu (Malay)'
-}
+    AI generates decisions → Backend builds JSON → Always valid
+
+    Args:
+        activities: Activities to edit
+        instructions: User's edit instructions
+        plan_context: Plan context (optional)
+        language: User's preferred language
+
+    Returns:
+        Activity edit JSON (for backwards compatibility)
+    """
+    try:
+        # Get AI decisions
+        decisions = get_activity_edit_decisions(activities, instructions, plan_context, language)
+
+        # Build final JSON from decisions
+        final_json = build_activity_edit_json(decisions)
+
+        if final_json.get('success'):
+            print(f"--- [Activity Edit] Successfully edited {len(final_json['updated_activities'])} activities with new architecture ---")
+        else:
+            print(f"--- [Activity Edit] Failed: {final_json.get('error')} ---")
+
+        return final_json
+
+    except Exception as e:
+        print(f"--- [Activity Edit Error] {e} ---")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+def get_language_instruction(language: str) -> str:
+    """
+    Returns standardized language instruction for ALL AI prompts.
+    Ensures consistent language enforcement across all AI functions.
+
+    Args:
+        language: Language code ('en', 'zh', 'ms')
+
+    Returns:
+        Language instruction string to prepend to AI prompts
+    """
+    response_language = LANGUAGE_FULL_NAMES.get(language, 'English')
+
+    return f"""*** CRITICAL: RESPONSE LANGUAGE ***
+You MUST respond in {response_language}. ALL text content MUST be written in {response_language}.
+- If "English": respond in English
+- If "Chinese (Simplified)": respond in 简体中文
+- If "Bahasa Melayu (Malay)": respond in Bahasa Melayu
+
+This is NON-NEGOTIABLE. The user has selected {response_language} as their preferred language.
+Do NOT auto-detect or switch languages based on user input - always use {response_language}.
+Even if the user asks in a different language, reply in {response_language}."""
+
+
+def get_system_message(message_type: str, language: str = 'en', **kwargs) -> str:
+    """
+    Returns standardized system messages in the correct language.
+
+    Args:
+        message_type: Type of system message (itineraryGenerated, foodRecommendations, etc.)
+        language: Language code ('en', 'zh', 'ms')
+        **kwargs: Parameters to interpolate (e.g., destination, duration, count)
+
+    Returns:
+        Translated system message string
+    """
+    SYSTEM_MESSAGES = {
+        'en': {
+            'itineraryGenerated': "I've created a {duration} itinerary for {destination}. Check out the detailed plan below!",
+            'foodRecommendations': "I found {count} great {mealType} options for you. Take a look below!",
+            'placeRecommendations': "I found {count} places that match your request. Check them out below!",
+            'activityEdited': "Successfully updated {count} activities based on your instructions.",
+            'generalResponse': "Here's what I found for you:"
+        },
+        'zh': {
+            'itineraryGenerated': "我已经为您创建了{destination}的{duration}行程。请查看下面的详细计划！",
+            'foodRecommendations': "我为您找到了{count}个很棒的{mealType}选择。快来看看吧！",
+            'placeRecommendations': "我找到了{count}个符合您要求的地点。请查看下面的内容！",
+            'activityEdited': "已根据您的指示成功更新{count}个活动。",
+            'generalResponse': "这是我为您找到的内容："
+        },
+        'ms': {
+            'itineraryGenerated': "Saya telah membuat jadual {duration} untuk {destination}. Lihat pelan terperinci di bawah!",
+            'foodRecommendations': "Saya jumpa {count} pilihan {mealType} yang hebat untuk anda. Lihat di bawah!",
+            'placeRecommendations': "Saya jumpa {count} tempat yang sesuai dengan permintaan anda. Semak di bawah!",
+            'activityEdited': "Berjaya mengemas kini {count} aktiviti berdasarkan arahan anda.",
+            'generalResponse': "Inilah yang saya jumpa untuk anda:"
+        }
+    }
+
+    # Get the message template for the language
+    messages = SYSTEM_MESSAGES.get(language, SYSTEM_MESSAGES['en'])
+    template = messages.get(message_type, messages.get('generalResponse', ''))
+
+    # Interpolate parameters
+    try:
+        return template.format(**kwargs)
+    except KeyError:
+        # If interpolation fails, return template as-is
+        return template
 
 def extract_destination_from_message(message: str) -> str:
     """从消息中提取目的地 - 简单启发式"""
