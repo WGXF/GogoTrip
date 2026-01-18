@@ -550,27 +550,27 @@ def extract_preferences_from_message(message: str) -> dict:
     }
     
     # Mood
-    if any(w in msg_lower for w in ['relax', '轻松', '悠闲', '慢节奏']):
+    if any(w in msg_lower for w in ['relax', '轻松', '悠闲', '慢节奏', 'santai', 'tenang']):
         prefs['mood'] = 'relaxed'
-    elif any(w in msg_lower for w in ['energetic', '紧凑', '充实', '活力']):
+    elif any(w in msg_lower for w in ['energetic', '紧凑', '充实', '活力', 'bertenaga', 'aktif']):
         prefs['mood'] = 'energetic'
-    elif any(w in msg_lower for w in ['romantic', '浪漫', '情侣', 'couple']):
+    elif any(w in msg_lower for w in ['romantic', '浪漫', '情侣', 'couple', 'romantik']):
         prefs['mood'] = 'romantic'
-    elif any(w in msg_lower for w in ['family', '家庭', '亲子', '孩子', 'kids']):
+    elif any(w in msg_lower for w in ['family', '家庭', '亲子', '孩子', 'kids', 'keluarga']):
         prefs['mood'] = 'family'
     
     # Budget
-    if any(w in msg_lower for w in ['budget', '省钱', '便宜', 'cheap', 'low budget']):
+    if any(w in msg_lower for w in ['budget', '省钱', '便宜', 'cheap', 'low budget', 'murah', 'bajet']):
         prefs['budget'] = 'low'
-    elif any(w in msg_lower for w in ['luxury', '奢华', '高端', 'premium', 'expensive']):
+    elif any(w in msg_lower for w in ['luxury', '奢华', '高端', 'premium', 'expensive', 'mewah']):
         prefs['budget'] = 'luxury'
-    elif any(w in msg_lower for w in ['high', '高预算']):
+    elif any(w in msg_lower for w in ['high', '高预算', 'mahal']):
         prefs['budget'] = 'high'
     
     # Transport
-    if any(w in msg_lower for w in ['walk', '步行', '走路']):
+    if any(w in msg_lower for w in ['walk', '步行', '走路', 'jalan kaki', 'berjalan']):
         prefs['transport'] = 'walk'
-    elif any(w in msg_lower for w in ['car', '自驾', '开车', 'drive']):
+    elif any(w in msg_lower for w in ['car', '自驾', '开车', 'drive', 'kereta', 'memandu']):
         prefs['transport'] = 'car'
     
     # Dietary
@@ -580,19 +580,19 @@ def extract_preferences_from_message(message: str) -> dict:
         prefs['dietary'].append('Vegetarian')
     if any(w in msg_lower for w in ['vegan', '纯素']):
         prefs['dietary'].append('Vegan')
-    if any(w in msg_lower for w in ['no pork', '不吃猪肉', '无猪']):
+    if any(w in msg_lower for w in ['no pork', '不吃猪肉', '无猪', 'tiada babi']):
         prefs['dietary'].append('No Pork')
-    if any(w in msg_lower for w in ['no beef', '不吃牛肉', '无牛']):
+    if any(w in msg_lower for w in ['no beef', '不吃牛肉', '无牛', 'tiada daging lembu']):
         prefs['dietary'].append('No Beef')
     
     # Companions
-    if any(w in msg_lower for w in ['solo', '一个人', '独自', 'alone']):
+    if any(w in msg_lower for w in ['solo', '一个人', '独自', 'alone', 'sendiri', 'bersendirian']):
         prefs['companions'] = 'solo'
-    elif any(w in msg_lower for w in ['couple', '情侣', '两个人', '约会']):
+    elif any(w in msg_lower for w in ['couple', '情侣', '两个人', '约会', 'pasangan']):
         prefs['companions'] = 'couple'
-    elif any(w in msg_lower for w in ['family', '家庭', '全家', '亲子']):
+    elif any(w in msg_lower for w in ['family', '家庭', '全家', '亲子', 'keluarga']):
         prefs['companions'] = 'family'
-    elif any(w in msg_lower for w in ['friend', '朋友', '同事']):
+    elif any(w in msg_lower for w in ['friend', '朋友', '同事', 'kawan', 'rakan']):
         prefs['companions'] = 'friends'
     
     return prefs
@@ -712,7 +712,8 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         itinerary_keywords = [
             '规划', '行程', '天游', '日游', '旅行计划', '安排',
             'plan', 'itinerary', 'trip', 'days', 'schedule', 'travel plan',
-            'day 1', 'day 2', 'day 3', '第一天', '第二天'
+            'day 1', 'day 2', 'day 3', '第一天', '第二天',
+            'rancang', 'perjalanan', 'cuti', 'lawatan', 'hari'  # Malay keywords
         ]
         
         is_itinerary_request = any(kw in last_msg_lower for kw in itinerary_keywords)
