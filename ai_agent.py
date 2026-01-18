@@ -143,6 +143,7 @@ RULES:
 3. Be concise - focus on key information
 4. Match language to {response_language} strictly
 5. Respect dietary restrictions strictly for food activities
+6. **IMPORTANT**: Ensure valid JSON. Escape all double quotes within strings (e.g. \\"). Do not include trailing commas.
 """
 
         model = genai.GenerativeModel(
@@ -167,11 +168,21 @@ RULES:
             
             if obj_start != -1 and obj_end != -1:
                 json_str = clean_text[obj_start:obj_end + 1]
-                parsed = json.loads(json_str)
                 
-                if parsed.get("type") == "daily_plan":
-                    print("--- [Fast Mode] 成功生成行程 ---")
-                    return f"DAILY_PLAN::{json_str}"
+                # Basic cleanup for common JSON errors
+                # 1. Remove trailing commas before closing braces/brackets
+                json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
+                
+                try:
+                    parsed = json.loads(json_str)
+                    
+                    if parsed.get("type") == "daily_plan":
+                        print("--- [Fast Mode] 成功生成行程 ---")
+                        return f"DAILY_PLAN::{json.dumps(parsed)}" # Re-dump to ensure valid JSON string
+                except json.JSONDecodeError as je:
+                     print(f"--- [Fast Mode JSON Error] {je} ---")
+                     # Fallback: Try to fix truncated JSON if needed, or just fail gracefully
+                     return None
         
         return None
         
@@ -241,7 +252,7 @@ USER PREFERENCES:
 OUTPUT: Return ONLY valid JSON array (no markdown, no explanation). Start with [
 
 Each restaurant object must have:
-{{
+{
   "name": "Restaurant Name",
   "cuisine_type": "Chinese/Japanese/Malay/Western/etc",
   "address": "Full address",
@@ -253,7 +264,7 @@ Each restaurant object must have:
   "signature_dishes": ["Dish 1", "Dish 2"],
   "tips": "Best time to visit or ordering tips",
   "distance": "1.2km"
-}}
+}
 
 RULES:
 1. Use REAL restaurant names that exist in Malaysia/the specified location
@@ -262,6 +273,7 @@ RULES:
 4. Sort by relevance to user's mood/preferences
 5. Provide actionable tips (what to order, when to go)
 6. Be concise but helpful
+7. **IMPORTANT**: Ensure valid JSON. Escape quotes. No trailing commas.
 """
 
         model = genai.GenerativeModel(
@@ -286,20 +298,31 @@ RULES:
             
             if arr_start != -1 and arr_end != -1:
                 json_str = clean_text[arr_start:arr_end + 1]
-                parsed = json.loads(json_str)
                 
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    print(f"--- [Food Recommendations] Generated {len(parsed)} recommendations ---")
-                    return {
-                        "success": True,
-                        "recommendations": parsed,
-                        "preferences_applied": {
-                            "cuisine": cuisine,
-                            "mood": mood,
-                            "budget": budget,
-                            "dietary": dietary,
-                            "meal_type": meal_type
+                # Basic cleanup
+                json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
+                
+                try:
+                    parsed = json.loads(json_str)
+                    
+                    if isinstance(parsed, list) and len(parsed) > 0:
+                        print(f"--- [Food Recommendations] Generated {len(parsed)} recommendations ---")
+                        return {
+                            "success": True,
+                            "recommendations": parsed,
+                            "preferences_applied": {
+                                "cuisine": cuisine,
+                                "mood": mood,
+                                "budget": budget,
+                                "dietary": dietary,
+                                "meal_type": meal_type
+                            }
                         }
+                except json.JSONDecodeError as je:
+                    print(f"--- [Food Recommendations JSON Error] {je} ---")
+                    return {
+                        "success": False,
+                        "error": "AI returned invalid JSON"
                     }
         
         return {
@@ -738,6 +761,7 @@ You MUST respond in {response_language}. All your responses, recommendations, de
 - If the language is "Chinese (Simplified)", respond in 简体中文.
 - If the language is "Bahasa Melayu (Malay)", respond in Bahasa Melayu.
 This is NON-NEGOTIABLE. The user has selected {response_language} as their preferred language.
+DO NOT use English if the user selected Chinese or Malay, unless it is a proper noun (like a place name).
 
 *** PREFERENCE ANALYSIS ***
 The user may provide structured preferences (e.g., "Mood: Relaxed", "Budget: Medium", "Dietary: Halal").
@@ -781,6 +805,7 @@ You MUST STRICTLY adhere to these constraints:
 *** LANGUAGE REMINDER ***
 You MUST respond in {response_language}. This has been set by the user in their preferences.
 Do NOT auto-detect or switch languages based on user input - always use {response_language}.
+Even if the user asks in English, reply in {response_language}.
 
 *** RESPONSE FORMAT ***
 
