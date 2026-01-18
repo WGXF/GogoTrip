@@ -1416,6 +1416,12 @@ Even if the user asks in English, reply in {response_language}.
 当用户只是想找餐厅或某个地点时使用。
 返回格式: POPUP_DATA::[{{"name": "...", "address": "...", "rating": 4.5, ...}}]
 
+*** CRITICAL: NO CONVERSATIONAL TEXT ***
+⚠️ DO NOT include ANY introductory text before POPUP_DATA::
+⚠️ DO NOT say "I found X places for you" or similar phrases.
+⚠️ Start your response DIRECTLY with POPUP_DATA::[...]
+The system will add appropriate user-facing messages automatically.
+
 **MODE B: 智能日程规划 (Daily Planning)**
 触发条件: 用户说 "规划行程"、"安排旅行"、"N天游"、"plan my day"、"daily plan" 等
 
@@ -1533,16 +1539,16 @@ Even if the user asks in English, reply in {response_language}.
 
 **CRITICAL RULES FOR DAILY PLANNING:**
 1. ⚠️ **PLACE_ID 是必须的**: 每个 activity 必须包含真实的 place_id (来自数据库)
-2. **先搜索，后规划**: 
+2. **先搜索，后规划**:
    - 首先调用 search_nearby_places 搜索: 餐厅、景点、咖啡馆等
    - 然后调用 query_places_from_db 获取详情
    - 建立 "地点池"，然后从中挑选
 3. **时间逻辑**: 活动时间应该合理，考虑交通时间
 4. **预算逻辑**: 根据用户的 budget 偏好筛选地点 (price_level)
-5. **交通逻辑**: 
+5. **交通逻辑**:
    - "public" = 优先选择地铁/公交站附近的地点
    - "walk" = 活动点要聚集在一起
-6. **饮食逻辑**: 
+6. **饮食逻辑**:
    - 如果用户选择 "Halal"，食物类活动必须是 Halal 认证餐厅
    - 在 dietary_info 中标注
 7. **心情逻辑**:
@@ -1550,6 +1556,12 @@ Even if the user asks in English, reply in {response_language}.
    - "energetic" = 每天 5-6 个活动，紧凑行程
 8. **top_locations**: 每天选择 2-3 个最具代表性的地点用于图片展示
 9. **NO MARKDOWN**: 直接以 {{ 开始，不要 ```json
+
+*** CRITICAL: NO CONVERSATIONAL TEXT ***
+⚠️ DO NOT include ANY introductory, explanatory, or conversational text before the JSON.
+⚠️ DO NOT say phrases like "I've created", "Here is your itinerary", "Check out the plan below", or similar.
+⚠️ Start your response DIRECTLY with the JSON object ({{ ... }}).
+The system will add appropriate user-facing messages automatically.
 
 *** NEVER HALLUCINATE ***
 - 只使用工具返回的真实数据
