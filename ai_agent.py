@@ -13,22 +13,55 @@ import datetime
 import google.generativeai as genai
 import sys
 import logging
+import re
 
 import config
 from tools import (
-    get_ip_location_info, 
-    get_current_weather, 
-    search_nearby_places, 
+    get_ip_location_info,
+    get_current_weather,
+    search_nearby_places,
     get_coordinates_for_city,
     query_places_from_db
 )
 
 logging.basicConfig(
-    filename='app.log', 
+    filename='app.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     encoding='utf-8'
 )
+
+
+# ============ Safe JSON Parser ============
+
+def safe_json_loads(text: str):
+    """
+    安全 JSON 解析器 - 处理 AI 模型常见的 JSON 错误
+
+    常见错误:
+    - Trailing commas
+    - Missing commas between array items
+    - Missing commas between object properties
+    - Markdown code blocks
+    - Truncated JSON
+    """
+    # 清理 markdown
+    cleaned = text.replace("```json", "").replace("```", "").strip()
+
+    # 尝试截取 JSON (object or array)
+    if '[' in cleaned and ']' in cleaned:
+        # Array format
+        cleaned = cleaned[cleaned.find('['): cleaned.rfind(']') + 1]
+    elif '{' in cleaned and '}' in cleaned:
+        # Object format
+        cleaned = cleaned[cleaned.find('{'): cleaned.rfind('}') + 1]
+
+    # 常见 AI 错误修复
+    cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)   # 去 trailing comma
+    cleaned = re.sub(r'}\s*{', '},{', cleaned)         # array item 少逗号
+    cleaned = re.sub(r'"\s*\n\s*"', '",\n"', cleaned)  # object 少逗号
+
+    return json.loads(cleaned)
 
 
 class LoggerWriter:
@@ -143,7 +176,15 @@ RULES:
 3. Be concise - focus on key information
 4. Match language to {response_language} strictly
 5. Respect dietary restrictions strictly for food activities
-6. **IMPORTANT**: Ensure valid JSON. Escape all double quotes within strings (e.g. \\"). Do not include trailing commas.
+
+CRITICAL JSON RULES:
+- Use DOUBLE QUOTES only
+- Do NOT include comments
+- Do NOT include "or []" or explanations
+- Do NOT use emojis in JSON values
+- Every comma must be correctly placed
+- No trailing commas before }} or ]]
+- Validate JSON before returning
 """
 
         model = genai.GenerativeModel(
@@ -155,34 +196,33 @@ RULES:
         )
         
         response = model.generate_content(fast_prompt)
-        
+
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
-            
-            # Clean markdown if present
-            clean_text = ai_text.replace("```json", "").replace("```", "").strip()
-            
-            # Extract JSON
-            obj_start = clean_text.find('{')
-            obj_end = clean_text.rfind('}')
-            
-            if obj_start != -1 and obj_end != -1:
-                json_str = clean_text[obj_start:obj_end + 1]
-                
-                # Basic cleanup for common JSON errors
-                # 1. Remove trailing commas before closing braces/brackets
-                json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
-                
+
+            try:
+                # 使用 safe_json_loads 解析
+                parsed = safe_json_loads(ai_text)
+
+                if parsed.get("type") == "daily_plan":
+                    print("--- [Fast Mode] 成功生成行程 ---")
+                    return f"DAILY_PLAN::{json.dumps(parsed)}"
+            except Exception as e:
+                # Retry once if JSON parsing fails
+                print(f"--- [Fast Mode] JSON invalid, retrying once... Error: {e} ---")
+
                 try:
-                    parsed = json.loads(json_str)
-                    
-                    if parsed.get("type") == "daily_plan":
-                        print("--- [Fast Mode] 成功生成行程 ---")
-                        return f"DAILY_PLAN::{json.dumps(parsed)}" # Re-dump to ensure valid JSON string
-                except json.JSONDecodeError as je:
-                     print(f"--- [Fast Mode JSON Error] {je} ---")
-                     # Fallback: Try to fix truncated JSON if needed, or just fail gracefully
-                     return None
+                    retry_response = model.generate_content(fast_prompt)
+                    if retry_response.candidates and retry_response.candidates[0].content.parts:
+                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                        parsed = safe_json_loads(retry_text)
+
+                        if parsed.get("type") == "daily_plan":
+                            print("--- [Fast Mode] Retry 成功生成行程 ---")
+                            return f"DAILY_PLAN::{json.dumps(parsed)}"
+                except Exception as retry_error:
+                    print(f"--- [Fast Mode] Retry failed: {retry_error} ---")
+                    return None
         
         return None
         
@@ -273,7 +313,15 @@ RULES:
 4. Sort by relevance to user's mood/preferences
 5. Provide actionable tips (what to order, when to go)
 6. Be concise but helpful
-7. **IMPORTANT**: Ensure valid JSON. Escape quotes. No trailing commas.
+
+CRITICAL JSON RULES:
+- Use DOUBLE QUOTES only
+- Do NOT include comments
+- Do NOT include "or []" or explanations
+- Do NOT use emojis in JSON values
+- Every comma must be correctly placed
+- No trailing commas before }} or ]]
+- Validate JSON before returning
 """
 
         model = genai.GenerativeModel(
@@ -285,45 +333,57 @@ RULES:
         )
         
         response = model.generate_content(food_prompt)
-        
+
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
-            
-            # Clean markdown if present
-            clean_text = ai_text.replace("```json", "").replace("```", "").strip()
-            
-            # Extract JSON array
-            arr_start = clean_text.find('[')
-            arr_end = clean_text.rfind(']')
-            
-            if arr_start != -1 and arr_end != -1:
-                json_str = clean_text[arr_start:arr_end + 1]
-                
-                # Basic cleanup
-                json_str = re.sub(r',\s*([}\]])', r'\1', json_str)
-                
-                try:
-                    parsed = json.loads(json_str)
-                    
-                    if isinstance(parsed, list) and len(parsed) > 0:
-                        print(f"--- [Food Recommendations] Generated {len(parsed)} recommendations ---")
-                        return {
-                            "success": True,
-                            "recommendations": parsed,
-                            "preferences_applied": {
-                                "cuisine": cuisine,
-                                "mood": mood,
-                                "budget": budget,
-                                "dietary": dietary,
-                                "meal_type": meal_type
-                            }
-                        }
-                except json.JSONDecodeError as je:
-                    print(f"--- [Food Recommendations JSON Error] {je} ---")
+
+            try:
+                # 使用 safe_json_loads 解析
+                parsed = safe_json_loads(ai_text)
+
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    print(f"--- [Food Recommendations] Generated {len(parsed)} recommendations ---")
                     return {
-                        "success": False,
-                        "error": "AI returned invalid JSON"
+                        "success": True,
+                        "recommendations": parsed,
+                        "preferences_applied": {
+                            "cuisine": cuisine,
+                            "mood": mood,
+                            "budget": budget,
+                            "dietary": dietary,
+                            "meal_type": meal_type
+                        }
                     }
+            except Exception as e:
+                # Retry once if JSON parsing fails
+                print(f"--- [Food Recommendations] JSON invalid, retrying once... Error: {e} ---")
+
+                try:
+                    retry_response = model.generate_content(food_prompt)
+                    if retry_response.candidates and retry_response.candidates[0].content.parts:
+                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                        parsed = safe_json_loads(retry_text)
+
+                        if isinstance(parsed, list) and len(parsed) > 0:
+                            print(f"--- [Food Recommendations] Retry 成功生成 {len(parsed)} recommendations ---")
+                            return {
+                                "success": True,
+                                "recommendations": parsed,
+                                "preferences_applied": {
+                                    "cuisine": cuisine,
+                                    "mood": mood,
+                                    "budget": budget,
+                                    "dietary": dietary,
+                                    "meal_type": meal_type
+                                }
+                            }
+                except Exception as retry_error:
+                    print(f"--- [Food Recommendations] Retry failed: {retry_error} ---")
+
+                return {
+                    "success": False,
+                    "error": "AI returned invalid JSON"
+                }
         
         return {
             "success": False,
@@ -423,27 +483,38 @@ def edit_activities_with_ai(activities: list, instructions: str, plan_context: d
         )
         
         response = model.generate_content(edit_prompt)
-        
+
         if response.candidates and response.candidates[0].content.parts:
             ai_text = response.candidates[0].content.parts[0].text.strip()
-            
-            # Clean markdown if present
-            clean_text = ai_text.replace("```json", "").replace("```", "").strip()
-            
-            # Extract JSON array
-            arr_start = clean_text.find('[')
-            arr_end = clean_text.rfind(']')
-            
-            if arr_start != -1 and arr_end != -1:
-                json_str = clean_text[arr_start:arr_end + 1]
-                parsed = json.loads(json_str)
-                
+
+            try:
+                # 使用 safe_json_loads 解析
+                parsed = safe_json_loads(ai_text)
+
                 if isinstance(parsed, list):
                     print(f"--- [AI Edit] 成功修改 {len(parsed)} 个活动 ---")
                     return {
                         "success": True,
                         "updated_activities": parsed
                     }
+            except Exception as e:
+                # Retry once if JSON parsing fails
+                print(f"--- [AI Edit] JSON invalid, retrying once... Error: {e} ---")
+
+                try:
+                    retry_response = model.generate_content(edit_prompt)
+                    if retry_response.candidates and retry_response.candidates[0].content.parts:
+                        retry_text = retry_response.candidates[0].content.parts[0].text.strip()
+                        parsed = safe_json_loads(retry_text)
+
+                        if isinstance(parsed, list):
+                            print(f"--- [AI Edit] Retry 成功修改 {len(parsed)} 个活动 ---")
+                            return {
+                                "success": True,
+                                "updated_activities": parsed
+                            }
+                except Exception as retry_error:
+                    print(f"--- [AI Edit] Retry failed: {retry_error} ---")
         
         return {
             "success": False,
