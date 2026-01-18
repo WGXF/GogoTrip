@@ -252,19 +252,19 @@ USER PREFERENCES:
 OUTPUT: Return ONLY valid JSON array (no markdown, no explanation). Start with [
 
 Each restaurant object must have:
-{
+{{
   "name": "Restaurant Name",
   "cuisine_type": "Chinese/Japanese/Malay/Western/etc",
   "address": "Full address",
   "rating": 4.5,
   "price_level": 2,
   "description": "Why this place is great for the user's mood/occasion (1-2 sentences)",
-  "dietary_tags": ["Halal", "Vegetarian"] or [],
+  "dietary_tags": ["Halal", "Vegetarian"],
   "is_open_now": true,
   "signature_dishes": ["Dish 1", "Dish 2"],
   "tips": "Best time to visit or ordering tips",
   "distance": "1.2km"
-}
+}}
 
 RULES:
 1. Use REAL restaurant names that exist in Malaysia/the specified location
