@@ -488,10 +488,14 @@ def chat_message():
         # 🆕 Language preference for AI response (i18n support)
         # Priority: request param > user profile > 'en' (default)
         user_language = data.get('language')
+        print(f"--- [Language Detection] Request language: {data.get('language')} ---")
         if not user_language and user and hasattr(user, 'preferred_language'):
             user_language = user.preferred_language
+            print(f"--- [Language Detection] Using user profile language: {user_language} ---")
         if not user_language:
             user_language = 'en'
+            print(f"--- [Language Detection] Using default language: en ---")
+        print(f"--- [Language Detection] Final language for system messages: {user_language} ---")
 
         if not user_message:
             return jsonify({'error': '消息内容为空'}), 400
@@ -542,7 +546,11 @@ def chat_message():
         # Save AI response for ALL authenticated users
         if user and conversation_id:
             try:
+                # ✅ DEDUPLICATION GUARD: Track if we've saved a system message (prevents duplicates within this request)
+                system_message_saved = False
+
                 # ✅ DEFENSIVE PARSING: Strip any conversational text before structured data markers
+                # This ensures ONLY the system message appears as intro text, even if AI ignores instructions
                 if 'POPUP_DATA::' in ai_response_text:
                     marker_index = ai_response_text.index('POPUP_DATA::')
                     if marker_index > 0:
@@ -563,7 +571,7 @@ def chat_message():
 
                         # Generate system message in user's language
                         count = len(places_data) if isinstance(places_data, list) else 0
-                        if count > 0:
+                        if count > 0 and not system_message_saved:
                             system_msg = get_system_message(
                                 'placeRecommendations',
                                 language=user_language,
@@ -586,6 +594,7 @@ def chat_message():
                                 suggestions_json=json_string
                             )
 
+                            system_message_saved = True
                             print(f"--- [Chat] Saved system message + POPUP_DATA for conversation {conversation_id} ---")
                         else:
                             # No places found, save as-is
@@ -608,33 +617,39 @@ def chat_message():
                     try:
                         plan_data = json.loads(json_string)  # Validate and parse
 
-                        # Generate system message in user's language
-                        destination = plan_data.get('title', 'your destination')
-                        duration = plan_data.get('duration', 'your trip')
-                        system_msg = get_system_message(
-                            'itineraryGenerated',
-                            language=user_language,
-                            destination=destination,
-                            duration=duration
-                        )
+                        if not system_message_saved:
+                            # Generate system message in user's language
+                            destination = plan_data.get('title', 'your destination')
+                            duration = plan_data.get('duration', 'your trip')
+                            print(f"--- [System Message] Generating itinerary message in language: {user_language} ---")
+                            system_msg = get_system_message(
+                                'itineraryGenerated',
+                                language=user_language,
+                                destination=destination,
+                                duration=duration
+                            )
+                            print(f"--- [System Message] Generated message: {system_msg[:100]}... ---")
 
-                        # ✅ Save TWO separate messages:
-                        # 1️⃣ System message (plain text, localized)
-                        ConversationRepository.add_message(
-                            conversation_id=conversation_id,
-                            role='ai',
-                            content=system_msg
-                        )
+                            # ✅ Save TWO separate messages:
+                            # 1️⃣ System message (plain text, localized)
+                            ConversationRepository.add_message(
+                                conversation_id=conversation_id,
+                                role='ai',
+                                content=system_msg
+                            )
 
-                        # 2️⃣ DAILY_PLAN message (pure structured payload)
-                        ConversationRepository.add_message(
-                            conversation_id=conversation_id,
-                            role='ai',
-                            content=f"DAILY_PLAN::{json_string}",
-                            suggestions_json=json_string
-                        )
+                            # 2️⃣ DAILY_PLAN message (pure structured payload)
+                            ConversationRepository.add_message(
+                                conversation_id=conversation_id,
+                                role='ai',
+                                content=f"DAILY_PLAN::{json_string}",
+                                suggestions_json=json_string
+                            )
 
-                        print(f"--- [Chat] Saved system message + DAILY_PLAN for conversation {conversation_id} ---")
+                            system_message_saved = True
+                            print(f"--- [Chat] Saved system message + DAILY_PLAN for conversation {conversation_id} ---")
+                        else:
+                            print(f"--- [DEDUPLICATION] Skipping duplicate DAILY_PLAN system message ---")
                     except json.JSONDecodeError:
                         # Invalid JSON, save as-is
                         ConversationRepository.add_message(
@@ -645,11 +660,15 @@ def chat_message():
 
                 # Handle regular chat (no structured data)
                 else:
-                    ConversationRepository.add_message(
-                        conversation_id=conversation_id,
-                        role='ai',
-                        content=ai_response_text
-                    )
+                    # Only save if there's actual content (prevent saving empty messages after stripping)
+                    if ai_response_text and ai_response_text.strip():
+                        ConversationRepository.add_message(
+                            conversation_id=conversation_id,
+                            role='ai',
+                            content=ai_response_text
+                        )
+                    else:
+                        print(f"--- [WARNING] Skipping empty AI response after parsing ---")
                 
                 print(f"--- [Chat] Saved messages for conversation {conversation_id} (user_id={user.id}) ---")
                 
