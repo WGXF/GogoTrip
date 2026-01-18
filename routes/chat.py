@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, session, jsonify
 from flask_login import current_user, login_required
-from ai_agent import get_ai_chat_response, edit_activities_with_ai, get_fast_food_recommendations
+from ai_agent import get_ai_chat_response, edit_activities_with_ai, get_fast_food_recommendations, get_system_message
 from models import db, User, Place
 from chat_models import AIConversation, AIMessage, ConversationRepository
 
@@ -549,8 +549,19 @@ def chat_message():
                 if ai_response_text.startswith('POPUP_DATA::'):
                     json_string = ai_response_text[len('POPUP_DATA::'):]
                     try:
-                        json.loads(json_string)  # Validate
+                        places_data = json.loads(json_string)  # Validate and parse
                         suggestions_json = json_string
+
+                        # Generate system message in user's language
+                        count = len(places_data) if isinstance(places_data, list) else 0
+                        if count > 0:
+                            system_msg = get_system_message(
+                                'placeRecommendations',
+                                language=user_language,
+                                count=count
+                            )
+                            # Prepend system message to response
+                            ai_response_text = f"{system_msg}\n\nPOPUP_DATA::{json_string}"
                     except json.JSONDecodeError:
                         pass
                 
@@ -558,11 +569,24 @@ def chat_message():
                 elif ai_response_text.startswith('DAILY_PLAN::'):
                     json_string = ai_response_text[len('DAILY_PLAN::'):]
                     try:
-                        json.loads(json_string)  # Validate
+                        plan_data = json.loads(json_string)  # Validate and parse
                         suggestions_json = json_string
+
+                        # Generate system message in user's language
+                        destination = plan_data.get('title', 'your destination')
+                        duration = plan_data.get('duration', 'your trip')
+                        system_msg = get_system_message(
+                            'itineraryGenerated',
+                            language=user_language,
+                            destination=destination,
+                            duration=duration
+                        )
+
+                        # Prepend system message to response
+                        ai_response_text = f"{system_msg}\n\nDAILY_PLAN::{json_string}"
                     except json.JSONDecodeError:
                         pass
-                
+
                 # Save AI response
                 ConversationRepository.add_message(
                     conversation_id=conversation_id,
@@ -630,12 +654,16 @@ def edit_activities():
         
         print(f"--- [AI Edit] Processing {len(activities)} activities ---")
         print(f"--- [AI Edit] Instructions: {instructions[:100]}... ---")
-        
+
+        # Get user's preferred language
+        user_language = current_user.preferred_language if current_user.is_authenticated else 'en'
+
         # Call AI edit function
         result = edit_activities_with_ai(
             activities=activities,
             instructions=instructions,
-            plan_context=plan_context
+            plan_context=plan_context,
+            language=user_language
         )
         
         if result.get('success'):
@@ -708,11 +736,15 @@ def get_food_recommendations():
         print(f"--- [Food Wizard] Processing request ---")
         print(f"--- [Food Wizard] Preferences: {preferences} ---")
         print(f"--- [Food Wizard] Location: {location} ---")
-        
+
+        # Get user's preferred language
+        user_language = current_user.preferred_language if current_user.is_authenticated else 'en'
+
         # Call the fast food recommendations function
         result = get_fast_food_recommendations(
             preferences=preferences,
-            location=location
+            location=location,
+            language=user_language
         )
         
         if result.get('success'):
@@ -758,14 +790,22 @@ def get_food_recommendations():
                         content=user_msg
                     )
                     
+                    # Generate system message in user's language
+                    system_msg = get_system_message(
+                        'foodRecommendations',
+                        language=user_language,
+                        count=len(recommendations),
+                        mealType=meal_type
+                    )
+
                     # Build AI response with FOOD_DATA:: prefix for parsing
                     food_data = {
                         'type': 'food_recommendations',
                         'recommendations': recommendations,
                         'preferences_applied': preferences_applied
                     }
-                    ai_response = f"FOOD_DATA::{json.dumps(food_data, ensure_ascii=False)}"
-                    
+                    ai_response = f"{system_msg}\n\nFOOD_DATA::{json.dumps(food_data, ensure_ascii=False)}"
+
                     # Save AI response
                     ConversationRepository.add_message(
                         conversation_id=conversation_id,
