@@ -828,16 +828,35 @@ def get_transactions():
 @payment_bp.route('/continue-payment/<order_reference>', methods=['GET'])
 @login_required
 def continue_payment(order_reference):
-    """Continue incomplete payment"""
+    """
+    Continue incomplete payment
+
+    ✅ FIXED: Prevent reusing ToyyibPay payment URLs
+    - ToyyibPay payment sessions end when user exits the payment page
+    - Reusing the same BillCode results in "Please wait 10 minutes" error
+    - Solution: Block Continue Payment, force user to create new payment
+    """
     try:
         subscription = Subscription.query.filter_by(
             order_reference=order_reference,
             user_id=current_user.id
         ).first()
-        
+
         if not subscription:
             return jsonify({'error': 'Order not found'}), 404
-        
+
+        # ✅ FIX: If payment_url exists, user already opened payment page once
+        # Don't allow reuse - ToyyibPay will reject it
+        if subscription.payment_url and subscription.status == 'pending':
+            subscription.status = 'expired'
+            subscription.expired_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({
+                'error': 'Previous payment session has ended. Please create a new payment.',
+                'reason': 'payment_url_reuse_blocked',
+                'status': 'expired'
+            }), 400
+
         if subscription.is_pending_expired():
             subscription.status = 'expired'
             subscription.expired_at = datetime.utcnow()
@@ -846,22 +865,24 @@ def continue_payment(order_reference):
                 'error': 'Order has expired. Please create a new order.',
                 'status': 'expired'
             }), 400
-        
+
         if subscription.status != 'pending':
             return jsonify({
                 'error': f'Cannot continue payment for order with status: {subscription.status}'
             }), 400
-        
+
         if not subscription.payment_url:
             return jsonify({'error': 'Payment URL not available'}), 400
-        
+
+        # This code path should never be reached now due to the fix above
+        # Kept for backwards compatibility
         return jsonify({
             'success': True,
             'paymentUrl': subscription.payment_url,
             'order': subscription.to_dict(),
             'remainingTime': subscription.get_remaining_payment_time()
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
