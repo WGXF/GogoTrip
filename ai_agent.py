@@ -119,6 +119,51 @@ print("--- App log enabled, now writing to app.log ---")
 # These functions build final JSON from AI decisions
 # This ensures JSON is ALWAYS valid and structure is centralized
 
+def parse_budget_string(budget_str: str) -> float:
+    """
+    Parse budget string to float, handling various formats.
+
+    Handles formats like:
+    - "RM 50"
+    - "50"
+    - "0 (Free)"
+    - "RM 0 (Free)"
+    - "Free"
+    - "RM 20-30" (takes first number)
+    - "20-30"
+
+    Args:
+        budget_str: Budget string from AI
+
+    Returns:
+        Parsed float value (0.0 if parsing fails)
+    """
+    if not budget_str:
+        return 0.0
+
+    try:
+        # Remove 'RM' prefix
+        clean_str = budget_str.replace('RM', '').strip()
+
+        # Handle "Free" or "0 (Free)"
+        if 'free' in clean_str.lower():
+            return 0.0
+
+        # Remove anything in parentheses (e.g., "(Free)")
+        if '(' in clean_str:
+            clean_str = clean_str.split('(')[0].strip()
+
+        # Handle ranges (e.g., "20-30" -> take first number)
+        if '-' in clean_str:
+            clean_str = clean_str.split('-')[0].strip()
+
+        # Convert to float
+        return float(clean_str)
+
+    except (ValueError, AttributeError):
+        return 0.0
+
+
 def get_unsplash_image_url(query: str, width: int = 1200, fallback_id: str = None) -> str:
     """
     Generate Unsplash image URL from search query.
@@ -228,12 +273,9 @@ def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
     for day in daily_decisions:
         for place in day.get('selected_places', []):
             budget_str = place.get('budget', 'RM 0')
-            try:
-                amount = float(budget_str.replace('RM', '').strip())
-                total_budget_min += amount * 0.8
-                total_budget_max += amount * 1.2
-            except:
-                pass
+            amount = parse_budget_string(budget_str)
+            total_budget_min += amount * 0.8
+            total_budget_max += amount * 1.2
 
     total_budget_estimate = f"RM {int(total_budget_min)} - RM {int(total_budget_max)}"
 
@@ -297,9 +339,8 @@ def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
 
         # Calculate day summary
         day_budget = sum(
-            float(place.get('budget', 'RM 0').replace('RM', '').strip())
+            parse_budget_string(place.get('budget', 'RM 0'))
             for place in day_decision.get('selected_places', [])
-            if place.get('budget')
         )
 
         # Build top_locations with derived images
@@ -372,18 +413,15 @@ def build_food_recommendations_json(decisions: dict, preferences: dict) -> dict:
     for rec in decisions.get('recommendations', []):
         # Map price estimate to price level
         price_str = rec.get('price_estimate', 'RM 20')
-        try:
-            price = float(price_str.replace('RM', '').strip().split('-')[0])
-            if price < 15:
-                price_level = 1
-            elif price < 40:
-                price_level = 2
-            elif price < 80:
-                price_level = 3
-            else:
-                price_level = 4
-        except:
+        price = parse_budget_string(price_str)
+        if price < 15:
+            price_level = 1
+        elif price < 40:
             price_level = 2
+        elif price < 80:
+            price_level = 3
+        else:
+            price_level = 4
 
         # Extract dietary tags
         dietary_tags = []
