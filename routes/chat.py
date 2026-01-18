@@ -542,15 +542,24 @@ def chat_message():
         # Save AI response for ALL authenticated users
         if user and conversation_id:
             try:
-                # Extract suggestions/plans JSON if present
-                suggestions_json = None
-                
+                # ✅ DEFENSIVE PARSING: Strip any conversational text before structured data markers
+                if 'POPUP_DATA::' in ai_response_text:
+                    marker_index = ai_response_text.index('POPUP_DATA::')
+                    if marker_index > 0:
+                        print(f"--- [WARNING] AI added {marker_index} chars before POPUP_DATA::, stripping... ---")
+                    ai_response_text = ai_response_text[marker_index:]
+
+                if 'DAILY_PLAN::' in ai_response_text:
+                    marker_index = ai_response_text.index('DAILY_PLAN::')
+                    if marker_index > 0:
+                        print(f"--- [WARNING] AI added {marker_index} chars before DAILY_PLAN::, stripping... ---")
+                    ai_response_text = ai_response_text[marker_index:]
+
                 # Handle POPUP_DATA:: format (place recommendations)
                 if ai_response_text.startswith('POPUP_DATA::'):
                     json_string = ai_response_text[len('POPUP_DATA::'):]
                     try:
                         places_data = json.loads(json_string)  # Validate and parse
-                        suggestions_json = json_string
 
                         # Generate system message in user's language
                         count = len(places_data) if isinstance(places_data, list) else 0
@@ -560,17 +569,44 @@ def chat_message():
                                 language=user_language,
                                 count=count
                             )
-                            # Prepend system message to response
-                            ai_response_text = f"{system_msg}\n\nPOPUP_DATA::{json_string}"
+
+                            # ✅ Save TWO separate messages:
+                            # 1️⃣ System message (plain text, localized)
+                            ConversationRepository.add_message(
+                                conversation_id=conversation_id,
+                                role='ai',
+                                content=system_msg
+                            )
+
+                            # 2️⃣ POPUP_DATA message (pure structured payload)
+                            ConversationRepository.add_message(
+                                conversation_id=conversation_id,
+                                role='ai',
+                                content=f"POPUP_DATA::{json_string}",
+                                suggestions_json=json_string
+                            )
+
+                            print(f"--- [Chat] Saved system message + POPUP_DATA for conversation {conversation_id} ---")
+                        else:
+                            # No places found, save as-is
+                            ConversationRepository.add_message(
+                                conversation_id=conversation_id,
+                                role='ai',
+                                content=ai_response_text
+                            )
                     except json.JSONDecodeError:
-                        pass
-                
+                        # Invalid JSON, save as-is
+                        ConversationRepository.add_message(
+                            conversation_id=conversation_id,
+                            role='ai',
+                            content=ai_response_text
+                        )
+
                 # Handle DAILY_PLAN:: format (itineraries)
                 elif ai_response_text.startswith('DAILY_PLAN::'):
                     json_string = ai_response_text[len('DAILY_PLAN::'):]
                     try:
                         plan_data = json.loads(json_string)  # Validate and parse
-                        suggestions_json = json_string
 
                         # Generate system message in user's language
                         destination = plan_data.get('title', 'your destination')
@@ -582,18 +618,38 @@ def chat_message():
                             duration=duration
                         )
 
-                        # Prepend system message to response
-                        ai_response_text = f"{system_msg}\n\nDAILY_PLAN::{json_string}"
-                    except json.JSONDecodeError:
-                        pass
+                        # ✅ Save TWO separate messages:
+                        # 1️⃣ System message (plain text, localized)
+                        ConversationRepository.add_message(
+                            conversation_id=conversation_id,
+                            role='ai',
+                            content=system_msg
+                        )
 
-                # Save AI response
-                ConversationRepository.add_message(
-                    conversation_id=conversation_id,
-                    role='ai',
-                    content=ai_response_text,
-                    suggestions_json=suggestions_json
-                )
+                        # 2️⃣ DAILY_PLAN message (pure structured payload)
+                        ConversationRepository.add_message(
+                            conversation_id=conversation_id,
+                            role='ai',
+                            content=f"DAILY_PLAN::{json_string}",
+                            suggestions_json=json_string
+                        )
+
+                        print(f"--- [Chat] Saved system message + DAILY_PLAN for conversation {conversation_id} ---")
+                    except json.JSONDecodeError:
+                        # Invalid JSON, save as-is
+                        ConversationRepository.add_message(
+                            conversation_id=conversation_id,
+                            role='ai',
+                            content=ai_response_text
+                        )
+
+                # Handle regular chat (no structured data)
+                else:
+                    ConversationRepository.add_message(
+                        conversation_id=conversation_id,
+                        role='ai',
+                        content=ai_response_text
+                    )
                 
                 print(f"--- [Chat] Saved messages for conversation {conversation_id} (user_id={user.id}) ---")
                 
@@ -798,23 +854,31 @@ def get_food_recommendations():
                         mealType=meal_type
                     )
 
-                    # Build AI response with FOOD_DATA:: prefix for parsing
+                    # Build FOOD_DATA payload
                     food_data = {
                         'type': 'food_recommendations',
                         'recommendations': recommendations,
                         'preferences_applied': preferences_applied
                     }
-                    ai_response = f"{system_msg}\n\nFOOD_DATA::{json.dumps(food_data, ensure_ascii=False)}"
+                    food_json_string = json.dumps(food_data, ensure_ascii=False)
 
-                    # Save AI response
+                    # ✅ Save TWO separate messages:
+                    # 1️⃣ System message (plain text, localized)
                     ConversationRepository.add_message(
                         conversation_id=conversation_id,
                         role='ai',
-                        content=ai_response,
+                        content=system_msg
+                    )
+
+                    # 2️⃣ FOOD_DATA message (pure structured payload)
+                    ConversationRepository.add_message(
+                        conversation_id=conversation_id,
+                        role='ai',
+                        content=f"FOOD_DATA::{food_json_string}",
                         suggestions_json=json.dumps(recommendations, ensure_ascii=False)
                     )
-                    
-                    print(f"--- [Food Wizard] Saved to history, conversation_id={conversation_id} ---")
+
+                    print(f"--- [Food Wizard] Saved system message + FOOD_DATA to history, conversation_id={conversation_id} ---")
                     
                 except Exception as save_error:
                     print(f"--- [Food Wizard] Failed to save history: {save_error} ---")
