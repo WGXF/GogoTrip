@@ -1047,6 +1047,13 @@ def update_profile():
         if email_notifications is not None:
             user.email_notifications = email_notifications.lower() == 'true'
 
+        # 🆕 Handle language preference
+        preferred_language = request.form.get('preferredLanguage')
+        if preferred_language:
+            # Basic validation
+            if preferred_language in ['en', 'zh', 'ms']:
+                user.preferred_language = preferred_language
+
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Profile updated', 'user': user.to_dict()})
 
