@@ -31,6 +31,11 @@ logging.basicConfig(
     encoding='utf-8'
 )
 
+LANGUAGE_FULL_NAMES = {
+    'en': 'English',
+    'zh': 'Chinese (Simplified)',
+    'ms': 'Bahasa Melayu (Malay)'
+}
 
 # ============ Safe JSON Parser ============
 
