@@ -55,6 +55,12 @@ def create_advertisement():
         status = request.form.get('status', 'active')
         priority = request.form.get('priority', 1)
 
+        # Localization fields
+        title_zh = request.form.get('title_zh')
+        description_zh = request.form.get('description_zh')
+        title_ms = request.form.get('title_ms')
+        description_ms = request.form.get('description_ms')
+
         try:
             priority = int(priority)
         except ValueError:
