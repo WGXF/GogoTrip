@@ -260,9 +260,9 @@ def send_verification_email(email, code, token, expiry_minutes, is_reset=False):
                 Having trouble? <a href="mailto:support@gogotrip.com">Contact Support</a>
             </p>
             <p>
-                © 2024 GogoTrip. All rights reserved.<br>
-                <a href="https://gogotrip.com">Visit our website</a> | 
-                <a href="https://gogotrip.com/privacy">Privacy Policy</a>
+                © 2026 GogoTrip. All rights reserved.<br>
+                <a href="https://gogotrip.teocodes.com/">Visit our website</a> | 
+                <a href="https://gogotrip.teocodes.com/privacy">Privacy Policy</a>
             </p>
         </div>
     </div>
@@ -299,7 +299,7 @@ Copy the code above and paste it into the verification form.
 
 ---
 GogoTrip Team
-© 2024 GogoTrip. All rights reserved.
+© 2026 GogoTrip. All rights reserved.
 """
         
         # Add email content
@@ -605,7 +605,7 @@ def generate_subscription_email_html(
             <p style="color: #64748b;">{validity_detail}</p>
             
             <div style="text-align: center; margin-top: 30px;">
-                <a href="https://gogotrip.com/billing" class="cta-button">
+                <a href="https://gogotrip.teocodes.com/billing" class="cta-button">
                     View My Subscription
                 </a>
             </div>
@@ -614,10 +614,10 @@ def generate_subscription_email_html(
         <div class="footer">
             <p>Thank you for choosing GogoTrip!</p>
             <p>
-                <a href="https://gogotrip.com">Visit our website</a> | 
+                <a href="https://gogotrip.teocodes.com/">Visit our website</a> | 
                 <a href="mailto:support@gogotrip.com">Contact Support</a>
             </p>
-            <p>© 2024 GogoTrip. All rights reserved.</p>
+            <p>© 2026 GogoTrip. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -640,11 +640,11 @@ Subscription Details:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-View your subscription: https://gogotrip.com/billing
+View your subscription: https://gogotrip.teocodes.com/billing
 
 ---
 Thank you for choosing GogoTrip!
-© 2024 GogoTrip. All rights reserved.
+© 2026 GogoTrip. All rights reserved.
 """
     
     return subject, html_content, text_content
@@ -779,7 +779,7 @@ def generate_admin_notification_email_html(
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-                <a href="https://gogotrip.com" style="display: inline-block; background: {primary_color}; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+                <a href="https://gogotrip.teocodes.com/" style="display: inline-block; background: {primary_color}; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
                     Go to GogoTrip
                 </a>
             </div>
@@ -787,14 +787,14 @@ def generate_admin_notification_email_html(
         
         <div class="footer">
             <p>
-                <a href="https://gogotrip.com">Visit our website</a> | 
+                <a href="https://gogotrip.teocodes.com/">Visit our website</a> | 
                 <a href="mailto:support@gogotrip.com">Contact Support</a>
             </p>
             <p class="unsubscribe">
                 You received this email because you opted in to notifications.<br>
-                <a href="https://gogotrip.com/settings">Manage your email preferences</a>
+                <a href="https://gogotrip.teocodes.com/settings">Manage your email preferences</a>
             </p>
-            <p>© 2024 GogoTrip. All rights reserved.</p>
+            <p>© 2026 GogoTrip. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -814,13 +814,12 @@ Hi {user_name},
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Visit GogoTrip: https://gogotrip.com
+Visit GogoTrip: https://gogotrip.teocodes.com/
 
 ---
 You received this email because you opted in to notifications.
-Manage preferences: https://gogotrip.com/settings
-
-© 2024 GogoTrip. All rights reserved.
+Manage preferences: https://gogotrip.teocodes.com/settings
+© 2026 GogoTrip. All rights reserved.
 """
     
     return subject, html_content, text_content
@@ -863,8 +862,6 @@ def send_temp_password_email(to_email, temp_password):
             server.starttls()
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, to_email, message.as_string())
-        print(f"✅ Temporary password sent to {to_email}")
-        return True
     except Exception as e:
         print(f"❌ Email sending failed: {str(e)}")
         return False
