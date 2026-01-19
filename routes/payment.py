@@ -69,19 +69,24 @@ def calculate_new_end_date(user, additional_days):
 def can_user_purchase_plan(user, new_plan):
     """
     ✅ CORRECT LOGIC: Check if user can purchase a plan based on LEVEL, not days
-    
+
     Returns: (can_purchase, action_type, message)
     - action_type: 'purchase', 'renew', 'upgrade', 'blocked'
     """
     current_sub = get_user_active_subscription(user)
-    
-    if not current_sub or not current_sub.plan:
-        # No active subscription - can purchase any plan
+
+    if not current_sub:
+        # No active subscription at all - can purchase any plan
         return True, 'purchase', 'New subscription'
-    
+
+    if not current_sub.plan:
+        # Active subscription exists but without a linked plan (e.g., from activation code)
+        # Treat as upgrade to ensure days accumulate properly
+        return True, 'upgrade', 'Upgrade from activation subscription'
+
     current_level = current_sub.plan.level if current_sub.plan else 0
     new_level = new_plan.level
-    
+
     if new_level > current_level:
         # Upgrade allowed
         return True, 'upgrade', f'Upgrade from Level {current_level} to Level {new_level}'
