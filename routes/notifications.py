@@ -197,9 +197,9 @@ def get_notification_tab(tab_id):
         
         # 检查受众
         if tab.target_audience != 'all':
-            if tab.target_audience == 'premium' and not current_user.is_premium:
+            if tab.target_audience == 'premium' and not current_user.is_premium_active:
                 return jsonify({'error': 'This announcement is for premium users only'}), 403
-            elif tab.target_audience == 'free' and current_user.is_premium:
+            elif tab.target_audience == 'free' and current_user.is_premium_active:
                 return jsonify({'error': 'This announcement is for free users only'}), 403
         
         # 增加浏览量
@@ -255,9 +255,9 @@ def get_announcements_list():
         for tab in active_tabs:
             if tab.target_audience == 'all':
                 filtered_tabs.append(tab)
-            elif tab.target_audience == 'premium' and current_user.is_premium:
+            elif tab.target_audience == 'premium' and current_user.is_premium_active:
                 filtered_tabs.append(tab)
-            elif tab.target_audience == 'free' and not current_user.is_premium:
+            elif tab.target_audience == 'free' and not current_user.is_premium_active:
                 filtered_tabs.append(tab)
         
         announcements = []
@@ -299,9 +299,9 @@ def get_announcement_detail(announcement_id):
         
         # 检查受众权限
         if tab.target_audience != 'all':
-            if tab.target_audience == 'premium' and not current_user.is_premium:
+            if tab.target_audience == 'premium' and not current_user.is_premium_active:
                 return jsonify({'error': 'This announcement is for premium users only'}), 403
-            elif tab.target_audience == 'free' and current_user.is_premium:
+            elif tab.target_audience == 'free' and current_user.is_premium_active:
                 return jsonify({'error': 'This announcement is for free users only'}), 403
         
         # 增加浏览量
@@ -597,14 +597,14 @@ def admin_send_notification():
                 
         elif send_type == 'targeted':
             # 按条件群发（premium/free）
-            query = User.query.filter(User.status == 'active')
+            users = User.query.filter(User.status == 'active').all()
             
+            if target_audience not in ('premium', 'free'):
+                users = []
             if target_audience == 'premium':
-                query = query.filter(User.is_premium == True)
+                users = [u for u in users if u.is_premium_active]
             elif target_audience == 'free':
-                query = query.filter(User.is_premium == False)
-            
-            users = query.all()
+                users = [u for u in users if not u.is_premium_active]
             
             for user in users:
                 notif = Notification(
