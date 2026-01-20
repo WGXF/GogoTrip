@@ -1572,7 +1572,11 @@ The system will add appropriate user-facing messages automatically.
             model_name='gemini-2.5-flash',
             system_instruction=system_prompt,
             tools=tools_definition,
-            generation_config={"temperature": 0.1}
+            generation_config={
+                "temperature": 0.1,
+                "top_p": 0.95,
+                "top_k": 40
+            }
         )
 
         gemini_messages = [msg for msg in conversation_history]
@@ -1591,7 +1595,7 @@ The system will add appropriate user-facing messages automatically.
 
             response = model.generate_content(
                 gemini_messages,
-                tool_config={"function_calling_config": {"mode": "auto"}}
+                tool_config={"function_calling_config": {"mode": "any"}}
             )
             
             if not response.candidates:
