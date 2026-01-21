@@ -163,7 +163,8 @@ FRONTEND_ROUTES = (
     'travel',
     'trips',      # Frontend route /trips
     'calendar',   # Frontend route /calendar
-    'translate',  # Frontend route /translate
+    'translates',  # Frontend route /translate
+    'translate', 
     'login',
     'register',
     'dashboard',
@@ -194,53 +195,73 @@ BACKEND_PREFIXES = (
 def serve_spa(path):
     """
     SPA Fallback Handler - Serves frontend for non-API routes
-    
-    In Development: 
+
+    In Development:
         - Backend routes -> 404 (Not Found)
         - Frontend routes -> Error (Use Vite)
         - Unknown routes -> 404 (Not Found)
-    
+
     In Production: Serves index.html from built frontend
     """
-    # Normalize path for comparison (ensure no leading slash)
-    normalized_path = path.strip('/')
-    
-    # 1. Check if this is a backend API route
-    # Allow all backend prefixes (e.g., /api/..., /auth/...)
-    if any(normalized_path == p or normalized_path.startswith(p + '/') for p in BACKEND_PREFIXES):
-        # It's an API route but matched the catch-all, so the specific endpoint doesn't exist
-        # Return 404 for unmatched API routes (not 405, not SPA fallback)
-        return jsonify({'error': 'Not found'}), 404
-    
-    # Check if we're in development mode
-    is_dev = app.debug or os.environ.get('FLASK_ENV') == 'development'
-    
-    if is_dev:
-        # 2. Check if this is a known frontend route
-        # Block these in dev with helpful message
-        if any(normalized_path == p or normalized_path.startswith(p + '/') for p in FRONTEND_ROUTES):
-            return jsonify({
-                'error': 'Frontend must be accessed via Vite dev server',
-                'message': 'Please use https://gogotrip.teocodes.com to access the frontend application'
-            }), 404
+    try:
+        # Normalize path for comparison (ensure no leading slash)
+        normalized_path = path.strip('/')
 
-        # 3. Unknown route -> Return 404 (Backend 404)
-        # This fixes the issue where unknown backend routes were blocked by the "Use Vite" guard
-        return jsonify({'error': 'Not found'}), 404
-    else:
-        # Production: Serve index.html from dist folder
-        if os.path.exists(FRONTEND_DIST_DIR):
-            # Check if requesting a static asset (js, css, images, etc.)
-            static_file = os.path.join(FRONTEND_DIST_DIR, path)
-            if path and os.path.isfile(static_file):
-                return send_from_directory(FRONTEND_DIST_DIR, path)
-            # For all other routes, serve index.html (SPA routing)
-            return send_from_directory(FRONTEND_DIST_DIR, 'index.html')
+        # 1. Check if this is a backend API route
+        # Allow all backend prefixes (e.g., /api/..., /auth/...)
+        if any(normalized_path == p or normalized_path.startswith(p + '/') for p in BACKEND_PREFIXES):
+            # It's an API route but matched the catch-all, so the specific endpoint doesn't exist
+            # Return 404 for unmatched API routes (not 405, not SPA fallback)
+            return jsonify({'error': 'Not found'}), 404
+
+        # Check if we're in development mode
+        is_dev = app.debug or os.environ.get('FLASK_ENV') == 'development'
+
+        if is_dev:
+            # 2. Check if this is a known frontend route
+            # Block these in dev with helpful message
+            if any(normalized_path == p or normalized_path.startswith(p + '/') for p in FRONTEND_ROUTES):
+                return jsonify({
+                    'error': 'Frontend must be accessed via Vite dev server',
+                    'message': 'Please use https://gogotrip.teocodes.com to access the frontend application'
+                }), 404
+
+            # 3. Unknown route -> Return 404 (Backend 404)
+            # This fixes the issue where unknown backend routes were blocked by the "Use Vite" guard
+            return jsonify({'error': 'Not found'}), 404
         else:
-            return jsonify({
-                'error': 'Frontend not built',
-                'message': 'Run "npm run build" in gogotrip_backup and ensure dist folder exists'
-            }), 500
+            # Production: Serve index.html from dist folder
+            if os.path.exists(FRONTEND_DIST_DIR):
+                # Check if requesting a static asset (js, css, images, etc.)
+                static_file = os.path.join(FRONTEND_DIST_DIR, path)
+                if path and os.path.isfile(static_file):
+                    return send_from_directory(FRONTEND_DIST_DIR, path)
+
+                # For all other routes, serve index.html (SPA routing)
+                index_path = os.path.join(FRONTEND_DIST_DIR, 'index.html')
+                if os.path.isfile(index_path):
+                    return send_from_directory(FRONTEND_DIST_DIR, 'index.html')
+                else:
+                    print(f"❌ [SPA] index.html not found at: {index_path}")
+                    return jsonify({
+                        'error': 'index.html not found',
+                        'path': index_path
+                    }), 500
+            else:
+                print(f"❌ [SPA] FRONTEND_DIST_DIR not found: {FRONTEND_DIST_DIR}")
+                return jsonify({
+                    'error': 'Frontend not built',
+                    'message': 'Run "npm run build" in gogotrip_backup and ensure dist folder exists',
+                    'path': FRONTEND_DIST_DIR
+                }), 500
+    except Exception as e:
+        print(f"❌ [SPA Error] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Internal server error',
+            'message': str(e)
+        }), 500
 
 # ============================================
 # User Loader
