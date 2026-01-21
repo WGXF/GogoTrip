@@ -54,6 +54,10 @@ CLIENT_SECRETS_FILE = os.path.join(
     os.getenv("CLIENT_SECRETS_FILENAME", "credentials.json")
 )
 
+GOOGLE_KEY_FILENAME = os.getenv(
+        "GOOGLE_APPLICATION_CREDENTIALS"
+    )
+
 # --- Stripe ---
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
