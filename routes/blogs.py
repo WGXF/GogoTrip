@@ -161,20 +161,21 @@ def get_my_blogs():
     """Get current user's blogs (all statuses)"""
     try:
         status = request.args.get('status')
-        
+
         query = Blog.query.filter_by(author_id=current_user.id)
-        
+
         if status and status != 'all':
             query = query.filter_by(status=status)
-        
+
         query = query.order_by(Blog.created_at.desc())
-        blogs = [blog.to_preview_dict(current_user.id) for blog in query.all()]
-        
+        # Use to_dict() instead of to_preview_dict() so users can edit their blogs with full content
+        blogs = [blog.to_dict(current_user.id) for blog in query.all()]
+
         return jsonify({
             'success': True,
             'blogs': blogs
         })
-        
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

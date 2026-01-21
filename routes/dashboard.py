@@ -13,76 +13,120 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/admin/dashboard-stats', methods=['GET'])
 @login_required
 def get_admin_dashboard_stats():
-    """获取管理员仪表板统计数据"""
-    
-    # 检查权限
+    """Get admin dashboard statistics"""
+    from flask import request
+
+    # Check permissions
     if current_user.role not in ['Administrator', 'super_admin']:
         return jsonify({'message': 'Unauthorized'}), 403
-    
+
     try:
-        # 1. 总用户数
+        # Get time range from query params
+        time_range = request.args.get('range', 'Last 12 Months')
+
+        # 1. Total users
         total_users = User.query.count()
-        
-        # 2. 已验证用户数
+
+        # 2. Verified users
         verified_users = User.query.filter_by(is_email_verified=True).count()
-        
-        # 3. 总行程数
+
+        # 3. Total trips
         total_trips = Trip.query.count()
-        
-        # 4. 已发布文章数
+
+        # 4. Published articles
         total_articles = Article.query.filter_by(status='Published').count()
-        
-        # 5. 活跃订阅数（premium用户）
+
+        # 5. Active subscriptions (premium users)
         total_subscriptions = User.query.filter_by(is_premium=True).count()
-        
-        # 6. 本月收入（假设premium月费为RM 19.90）
-        # 在实际应用中，这应该从 Subscription 表计算
+
+        # 6. Monthly revenue - Calculate from subscriptions paid this month
+        # Include both 'active' and 'paid' status subscriptions
         current_month = datetime.now().month
         current_year = datetime.now().year
+
+        # Get all subscriptions paid this month (using payment_date)
         monthly_subscriptions = Subscription.query.filter(
-            Subscription.status == 'paid',
+            Subscription.status.in_(['active', 'paid']),
             extract('month', Subscription.payment_date) == current_month,
             extract('year', Subscription.payment_date) == current_year
-        ).count()
-        revenue_this_month = monthly_subscriptions * 19.90  # 假设每个订阅 RM 19.90
-        
-        # 7. 计算增长率（与上月相比）
+        ).all()
+
+        # Calculate revenue from plan prices
+        revenue_this_month = 0
+        for sub in monthly_subscriptions:
+            if sub.plan and sub.plan.price:
+                revenue_this_month += float(sub.plan.price)
+            else:
+                # Fallback to default price if plan not found
+                revenue_this_month += 19.90
+
+        # 7. Calculate growth rate (compared to last month)
         last_month = datetime.now().replace(day=1) - timedelta(days=1)
         last_month_start = last_month.replace(day=1)
         this_month_start = datetime.now().replace(day=1)
-        
-        # 用户增长
+
+        # User growth
         users_last_month = User.query.filter(
             User.created_at < this_month_start
         ).count()
         user_growth = round(((total_users - users_last_month) / users_last_month * 100), 1) if users_last_month > 0 else 0
-        
-        # 验证用户增长
+
+        # Verified users growth
         verified_last_month = User.query.filter(
             User.is_email_verified == True,
             User.created_at < this_month_start
         ).count()
         verified_growth = round(((verified_users - verified_last_month) / verified_last_month * 100), 1) if verified_last_month > 0 else 0
-        
-        # 行程增长
+
+        # Trip growth
         trips_last_month = Trip.query.filter(
             Trip.created_at < this_month_start
         ).count()
         trip_growth = round(((total_trips - trips_last_month) / trips_last_month * 100), 1) if trips_last_month > 0 else 0
-        
-        # 8. 过去12个月的用户增长图表数据
+
+        # 8. User growth chart data - FIX: Respect time_range parameter
         chart_data = []
-        for i in range(12):
-            month_start = (datetime.now() - timedelta(days=30 * (11 - i))).replace(day=1)
-            month_end = (month_start + timedelta(days=32)).replace(day=1)
-            
-            users_in_month = User.query.filter(
-                User.created_at >= month_start,
-                User.created_at < month_end
-            ).count()
-            
-            chart_data.append(users_in_month)
-        
+        now = datetime.now()
+
+        if time_range == 'Last 7 Days':
+            # Show data for last 7 days
+            for i in range(7):
+                day_start = (now - timedelta(days=6 - i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+
+                users_in_day = User.query.filter(
+                    User.created_at >= day_start,
+                    User.created_at < day_end
+                ).count()
+
+                chart_data.append(users_in_day)
+
+        elif time_range == 'Last 30 Days':
+            # Show data for last 30 days (grouped by day)
+            for i in range(30):
+                day_start = (now - timedelta(days=29 - i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+
+                users_in_day = User.query.filter(
+                    User.created_at >= day_start,
+                    User.created_at < day_end
+                ).count()
+
+                chart_data.append(users_in_day)
+
+        else:  # 'Last 12 Months' (default)
+            # Show data for last 12 months
+            for i in range(12):
+                month_start = (now - timedelta(days=30 * (11 - i))).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                month_end = (month_start + timedelta(days=32)).replace(day=1)
+
+                users_in_month = User.query.filter(
+                    User.created_at >= month_start,
+                    User.created_at < month_end
+                ).count()
+
+                chart_data.append(users_in_month)
+
         return jsonify({
             'totalUsers': total_users,
             'verifiedUsers': verified_users,
@@ -95,9 +139,11 @@ def get_admin_dashboard_stats():
             'tripGrowth': trip_growth,
             'chartData': chart_data
         })
-        
+
     except Exception as e:
         print(f"Error fetching admin dashboard stats: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'message': str(e)}), 500
 
 
@@ -108,36 +154,36 @@ def get_admin_dashboard_stats():
 @dashboard_bp.route('/user/dashboard', methods=['GET'])
 @login_required
 def get_user_dashboard():
-    """获取用户仪表板数据"""
-    
+    """Get user dashboard data"""
+
     try:
-        # 1. 即将到来的行程数
+        # 1. Upcoming trips count
         upcoming_trips = Trip.query.filter(
             Trip.user_id == current_user.id,
             Trip.status.in_(['upcoming', 'planning']),
             Trip.start_date >= datetime.now().date()
         ).count()
-        
-        # 2. 已访问国家数（从已完成的行程中统计唯一目的地）
-        # 这里简化处理，实际应用中可能需要更复杂的逻辑
+
+        # 2. Countries visited count (count unique destinations from completed trips)
+        # Simplified handling here, actual application may need more complex logic
         completed_trips = Trip.query.filter(
             Trip.user_id == current_user.id,
             Trip.status == 'completed'
         ).all()
-        
-        # 简单统计：假设 destination 字段就是国家名
+
+        # Simple count: assuming destination field is country name
         countries = set()
         for trip in completed_trips:
             if trip.destination:
                 countries.add(trip.destination)
         countries_visited = len(countries)
-        
-        # 3. 保存的行程数（所有状态的行程）
+
+        # 3. Saved itineraries count (trips in all statuses)
         saved_itineraries = Trip.query.filter(
             Trip.user_id == current_user.id
         ).count()
-        
-        # 4. 下一个行程信息
+
+        # 4. Next trip information
         next_trip_query = Trip.query.filter(
             Trip.user_id == current_user.id,
             Trip.status.in_(['upcoming', 'planning']),
@@ -151,11 +197,11 @@ def get_user_dashboard():
                 'destination': next_trip_query.destination or 'Unknown',
                 'daysUntil': days_until
             }
-        
-        # 5. 即将到来的预约/活动（从 TripItem 和 CalendarEvent 获取）
+
+        # 5. Upcoming appointments/activities (from TripItem and CalendarEvent)
         upcoming_appointments = []
-        
-        # 从 CalendarEvent 获取未来的事件
+
+        # Get future events from CalendarEvent
         calendar_events = CalendarEvent.query.filter(
             CalendarEvent.user_id == current_user.id,
             CalendarEvent.start_time >= datetime.now()
@@ -172,8 +218,8 @@ def get_user_dashboard():
                 'status': 'confirmed',
                 'color': '#3B82F6'
             })
-        
-        # 6. 保存的草稿（这里可以从 Trip 表中获取 planning 状态的行程）
+
+        # 6. Saved drafts (can get trips with planning status from Trip table)
         draft_trips = Trip.query.filter(
             Trip.user_id == current_user.id,
             Trip.status == 'planning'
