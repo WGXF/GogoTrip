@@ -121,19 +121,19 @@ print("--- App log enabled, now writing to app.log ---")
 
 def parse_budget_string(budget_str: str) -> float:
     """
-    Parse budget string to float, handling various formats.
+    Parse budget string to float, handling various formats and currencies.
 
     Handles formats like:
-    - "RM 50"
-    - "50"
-    - "0 (Free)"
-    - "RM 0 (Free)"
-    - "Free"
+    - "RM 50", "SGD 20", "USD 30", "JPY 1000"
+    - "新市20" (Singapore Dollar in Chinese)
+    - "$50", "¥100"
+    - "50" (plain number)
+    - "0 (Free)", "RM 0 (Free)", "Free"
     - "RM 20-30" (takes first number)
     - "20-30"
 
     Args:
-        budget_str: Budget string from AI
+        budget_str: Budget string from AI (can contain various currency symbols)
 
     Returns:
         Parsed float value (0.0 if parsing fails)
@@ -142,20 +142,46 @@ def parse_budget_string(budget_str: str) -> float:
         return 0.0
 
     try:
-        # Remove 'RM' prefix
-        clean_str = budget_str.replace('RM', '').strip()
-
-        # Handle "Free" or "0 (Free)"
-        if 'free' in clean_str.lower():
+        # Handle "Free" case
+        if 'free' in budget_str.lower():
             return 0.0
 
         # Remove anything in parentheses (e.g., "(Free)")
+        clean_str = budget_str
         if '(' in clean_str:
             clean_str = clean_str.split('(')[0].strip()
 
+        # Remove common currency prefixes/symbols
+        # Support: RM, SGD, USD, JPY, EUR, GBP, THB, PHP, IDR, CNY, HKD, TWD, etc.
+        currency_patterns = [
+            'RM', 'SGD', 'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'TWD',
+            'THB', 'PHP', 'IDR', 'MYR', 'AUD', 'NZD', 'CAD', 'CHF',
+            '新市',  # Singapore Dollar in Chinese
+            '美元',  # US Dollar in Chinese
+            '日元',  # Japanese Yen in Chinese
+            '港币',  # Hong Kong Dollar in Chinese
+            '$', '¥', '€', '£'  # Currency symbols
+        ]
+
+        for currency in currency_patterns:
+            clean_str = clean_str.replace(currency, '')
+
+        clean_str = clean_str.strip()
+
         # Handle ranges (e.g., "20-30" -> take first number)
-        if '-' in clean_str:
-            clean_str = clean_str.split('-')[0].strip()
+        if '-' in clean_str and clean_str.count('-') == 1:
+            # Check if it's a range, not a negative number
+            parts = clean_str.split('-')
+            if len(parts) == 2 and parts[0].strip():
+                clean_str = parts[0].strip()
+
+        # Remove any remaining non-numeric characters except decimal point
+        # This handles cases like "20新市" or "20 "
+        import re
+        clean_str = re.sub(r'[^\d.]', '', clean_str)
+
+        if not clean_str:
+            return 0.0
 
         # Convert to float
         return float(clean_str)
@@ -267,17 +293,29 @@ def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
     plan_concept = decisions.get('plan_concept', {})
     daily_decisions = decisions.get('daily_decisions', [])
 
-    # Calculate total budget
+    # Calculate total budget and detect currency
     total_budget_min = 0
     total_budget_max = 0
+    detected_currency = "RM"  # Default to RM
+
+    # Extract currency from first budget entry
     for day in daily_decisions:
         for place in day.get('selected_places', []):
             budget_str = place.get('budget', 'RM 0')
+
+            # Detect currency symbol/code from the budget string
+            if not detected_currency or detected_currency == "RM":
+                import re
+                # Try to extract currency prefix (e.g., "SGD", "USD", "新市")
+                currency_match = re.match(r'^([A-Z]{3}|[¥$€£]|新市|美元|日元|港币)\s*', budget_str)
+                if currency_match:
+                    detected_currency = currency_match.group(1)
+
             amount = parse_budget_string(budget_str)
             total_budget_min += amount * 0.8
             total_budget_max += amount * 1.2
 
-    total_budget_estimate = f"RM {int(total_budget_min)} - RM {int(total_budget_max)}"
+    total_budget_estimate = f"{detected_currency} {int(total_budget_min)} - {detected_currency} {int(total_budget_max)}"
 
     # Extract tags
     tags = []
@@ -337,11 +375,21 @@ def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
             # Move to next time slot
             current_time = (end_datetime + datetime.timedelta(minutes=30)).time()
 
-        # Calculate day summary
+        # Calculate day summary and detect currency for this day
         day_budget = sum(
             parse_budget_string(place.get('budget', 'RM 0'))
             for place in day_decision.get('selected_places', [])
         )
+
+        # Detect currency from first budget in this day
+        day_currency = "RM"  # Default
+        for place in day_decision.get('selected_places', []):
+            budget_str = place.get('budget', 'RM 0')
+            import re
+            currency_match = re.match(r'^([A-Z]{3}|[¥$€£]|新市|美元|日元|港币)\s*', budget_str)
+            if currency_match:
+                day_currency = currency_match.group(1)
+                break
 
         # Build top_locations with derived images
         top_locations = []
@@ -362,7 +410,7 @@ def build_daily_plan_json(decisions: dict, preferences: dict) -> dict:
             'activities': activities,
             'day_summary': {
                 'total_activities': len(activities),
-                'total_budget': f'RM {int(day_budget)}',
+                'total_budget': f'{day_currency} {int(day_budget)}',
                 'transport_notes': day_decision.get('transport_notes', 'Use public transport or Grab')
             }
         }
@@ -499,15 +547,31 @@ def get_itinerary_decisions(destination: str, duration: str, preferences: dict, 
 
     Args:
         destination: Travel destination
-        duration: Trip duration (e.g., "3D2N")
+        duration: Trip duration (e.g., "3D2N", "7D6N")
         preferences: User preferences dict
         language: User's preferred language
 
     Returns:
         Decision object with plan_concept, daily_decisions, tips
+        OR error dict if duration exceeds limit
     """
     try:
         genai.configure(api_key=config.GEMINI_API_KEY)
+
+        # Extract number of days from duration string (e.g., "14D13N" -> 14)
+        import re
+        duration_match = re.search(r'(\d+)D', duration)
+        num_days = int(duration_match.group(1)) if duration_match else 3
+
+        # Limit maximum trip duration to 7 days
+        MAX_DAYS = 7
+        if num_days > MAX_DAYS:
+            return {
+                'error': 'duration_too_long',
+                'requested_days': num_days,
+                'max_days': MAX_DAYS,
+                'message': f'Trip duration ({num_days} days) exceeds maximum supported length ({MAX_DAYS} days). Please plan shorter trips or split into multiple segments.'
+            }
 
         today_date = datetime.date.today().isoformat()
 
@@ -584,11 +648,14 @@ CRITICAL JSON RULES:
 - Validate JSON before returning
 """
 
+        # Adjust max_output_tokens based on trip length
+        max_tokens = 4096 if num_days <= 3 else 6144 if num_days <= 5 else 8192
+
         model = genai.GenerativeModel(
             model_name='gemini-2.0-flash',
             generation_config={
                 "temperature": 0.3,
-                "max_output_tokens": 4096
+                "max_output_tokens": max_tokens
             }
         )
 
@@ -895,12 +962,13 @@ def get_fast_itinerary_response(destination: str, duration: str, preferences: di
 
     Args:
         destination: Travel destination
-        duration: Trip duration (e.g., "3D2N")
+        duration: Trip duration (e.g., "3D2N", "14D13N")
         preferences: User preferences dict
         language: User's preferred language
 
     Returns:
         DAILY_PLAN:: prefix + JSON string (for backwards compatibility)
+        OR error message string if duration exceeds limit
     """
     try:
         # Get AI decisions
@@ -909,6 +977,15 @@ def get_fast_itinerary_response(destination: str, duration: str, preferences: di
         if not decisions:
             print("--- [Fast Mode] AI decisions failed ---")
             return None
+
+        # Check if error was returned (duration too long)
+        if decisions.get('error') == 'duration_too_long':
+            error_messages = {
+                'en': f"I can plan trips up to {decisions['max_days']} days. Your {decisions['requested_days']}-day trip is too long. Please try a shorter duration (e.g., '7-day trip to {destination}') or split it into multiple trips.",
+                'zh': f"我最多可以规划{decisions['max_days']}天的行程。您请求的{decisions['requested_days']}天行程太长了。请尝试更短的时长（例如：'{destination} 7天之旅'）或分成多个行程。",
+                'ms': f"Saya boleh merancang perjalanan sehingga {decisions['max_days']} hari. Perjalanan {decisions['requested_days']} hari anda terlalu panjang. Sila cuba tempoh yang lebih pendek (contoh: 'perjalanan 7 hari ke {destination}') atau bahagikan kepada beberapa perjalanan."
+            }
+            return error_messages.get(language, error_messages['en'])
 
         # Build final JSON from decisions
         final_json = build_daily_plan_json(decisions, preferences)
@@ -1122,20 +1199,38 @@ def extract_duration_from_message(message: str) -> str:
     """Extract trip duration from message"""
     msg_lower = message.lower()
 
-    # Match patterns like "3天", "3 days", "3天2夜"
-    patterns = [
+    # Match week patterns first (1 week = 7 days, 2 weeks = 14 days)
+    week_patterns = [
+        r'(\d+)\s*weeks?',  # "1 week", "2 weeks"
+        r'(\d+)\s*星期',    # Chinese: "1 星期"
+        r'(\d+)\s*周',      # Chinese: "1 周"
+        r'(\d+)\s*minggu',  # Malay: "1 minggu"
+    ]
+
+    for pattern in week_patterns:
+        match = re.search(pattern, msg_lower)
+        if match:
+            weeks = int(match.group(1))
+            days = weeks * 7
+            nights = days - 1
+            return f"{days}D{nights}N"
+
+    # Match day patterns like "3天", "3 days", "3天2夜"
+    day_patterns = [
         r'(\d+)\s*天',  # 3 days (Chinese)
         r'(\d+)\s*days?',  # 3 days
         r'(\d+)\s*晚',  # 3 nights (Chinese)
         r'(\d+)\s*nights?',  # 3 nights
+        r'(\d+)\s*hari',  # Malay: days
+        r'(\d+)\s*malam',  # Malay: nights
     ]
-    
-    for pattern in patterns:
+
+    for pattern in day_patterns:
         match = re.search(pattern, msg_lower)
         if match:
             num = int(match.group(1))
-            return f"{num}天{num-1}夜" if num > 1 else "1天"
-    
+            return f"{num}D{num-1}N" if num > 1 else "1D"
+
     # Default
     return "3D2N"  # 3 days 2 nights
 
@@ -1332,9 +1427,24 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
                 fast_result = get_fast_itinerary_response(destination, duration, preferences, language=language)
                 if fast_result:
                     return fast_result
-
-            # If Fast Mode fails or can't extract destination, continue with standard mode
-            print("--- [Fast Mode] Fallback to standard mode ---")
+                else:
+                    # Fast Mode returned None (error occurred)
+                    print("--- [Fast Mode] Failed to generate itinerary ---")
+                    error_messages = {
+                        'en': f"Sorry, I couldn't generate an itinerary for {destination}. Please try again with a different destination or shorter duration.",
+                        'zh': f"抱歉，我无法为{destination}生成行程。请尝试使用不同的目的地或更短的时长。",
+                        'ms': f"Maaf, saya tidak dapat menjana jadual perjalanan untuk {destination}. Sila cuba lagi dengan destinasi yang berbeza atau tempoh yang lebih pendek."
+                    }
+                    return error_messages.get(language, error_messages['en'])
+            else:
+                # No valid destination detected - warn user early
+                print("--- [Fast Mode] No valid destination detected in message ---")
+                invalid_dest_messages = {
+                    'en': "I couldn't identify a valid travel destination in your request. Please specify a city or place (e.g., 'Plan a 7-day trip to Tokyo').",
+                    'zh': "我无法在您的请求中识别出有效的旅游目的地。请指定一个城市或地点（例如：'规划7天东京之旅'）。",
+                    'ms': "Saya tidak dapat mengenal pasti destinasi pelancongan yang sah dalam permintaan anda. Sila nyatakan bandar atau tempat (contoh: 'Rancang perjalanan 7 hari ke Tokyo')."
+                }
+                return invalid_dest_messages.get(language, invalid_dest_messages['en'])
 
         # ============ STANDARD MODE: Other Requests ============
         genai.configure(api_key=config.GEMINI_API_KEY)
@@ -1353,9 +1463,36 @@ def get_ai_chat_response(conversation_history, credentials_dict, coordinates=Non
         response_language = LANGUAGE_FULL_NAMES.get(language, 'English')
         
         system_prompt = f"""
-You are GogoTrip AI, a professional intelligent travel planning assistant. 
+You are GogoTrip AI, a professional intelligent travel planning assistant specialized in TRAVEL AND TOURISM ONLY.
+
 Current Date: {today_date}
 User Context: {location_info_for_prompt}
+
+*** CRITICAL: SCOPE RESTRICTION ***
+You MUST ONLY answer questions related to:
+✅ Travel planning and itineraries
+✅ Tourist destinations and attractions
+✅ Restaurants and food recommendations
+✅ Hotels and accommodations
+✅ Transportation and directions
+✅ Travel tips and weather
+✅ Activities and experiences
+
+❌ You MUST REFUSE to answer:
+- Non-travel questions (math, coding, general knowledge, etc.)
+- Invalid destinations (e.g., "seafood", "pizza", random words that aren't places)
+- Medical advice, legal advice, financial advice
+- Any topic unrelated to tourism
+
+If the user asks something outside your scope or provides an invalid destination, politely respond in {response_language}:
+"I'm sorry, but I can only help with travel planning and tourism-related questions. Please ask me about destinations, restaurants, activities, or trip planning."
+
+*** CRITICAL: DESTINATION VALIDATION ***
+Before planning ANY itinerary, validate that the destination is a REAL PLACE:
+- ✅ Valid: "Kuala Lumpur", "Tokyo", "Paris", "Bali"
+- ❌ Invalid: "seafood" (that's food, not a place), "pizza" (that's food), "happiness" (abstract concept)
+
+If you detect an invalid destination, IMMEDIATELY respond with an error message in {response_language} and DO NOT call any tools.
 
 *** CRITICAL: RESPONSE LANGUAGE ***
 You MUST respond in {response_language}. All your responses, recommendations, descriptions, and JSON content MUST be written in {response_language}.
@@ -1583,11 +1720,14 @@ The system will add appropriate user-facing messages automatically.
         if gemini_messages and gemini_messages[0]['role'] == 'model':
             gemini_messages = gemini_messages[1:]
 
-        max_turns = 20  # Increase loop iterations to support multiple searches
+        max_turns = 10  # Reduced from 20 to prevent infinite loops
         turn_count = 0
 
         # Track search history to prevent duplicate searches
         search_history = []
+        # Track consecutive tool calls to detect loops
+        consecutive_tool_calls = 0
+        max_consecutive_tool_calls = 6  # If AI calls tools 6 times in a row, force stop
 
         while turn_count < max_turns:
             turn_count += 1
@@ -1607,8 +1747,19 @@ The system will add appropriate user-facing messages automatically.
 
             # Check if tool is being called
             if response_content.parts and response_content.parts[0].function_call:
-                print(f"--- [Tool Call] AI is calling tools... ---")
-                
+                consecutive_tool_calls += 1
+                print(f"--- [Tool Call] AI is calling tools... (consecutive: {consecutive_tool_calls}/{max_consecutive_tool_calls}) ---")
+
+                # Prevent infinite tool calling loop
+                if consecutive_tool_calls >= max_consecutive_tool_calls:
+                    print(f"--- [Loop Prevention] AI called tools {consecutive_tool_calls} times consecutively, forcing stop ---")
+                    error_message = {
+                        'en': "Sorry, I'm having trouble processing your request. Could you please rephrase or provide a valid travel destination?",
+                        'zh': "抱歉，我在处理您的请求时遇到了问题。您能否重新表述或提供一个有效的旅游目的地？",
+                        'ms': "Maaf, saya menghadapi masalah memproses permintaan anda. Bolehkah anda nyatakan semula atau berikan destinasi pelancongan yang sah?"
+                    }
+                    return error_message.get(language, error_message['en'])
+
                 tool_call = response_content.parts[0].function_call
                 function_name = tool_call.name
                 function_args = {key: value for key, value in tool_call.args.items()}
@@ -1714,6 +1865,7 @@ The system will add appropriate user-facing messages automatically.
                 
             else:
                 # AI decided not to call tools, return final response
+                consecutive_tool_calls = 0  # Reset counter when AI generates text response
                 print("--- [Chat Log] AI generating final response ---")
                 if response_content.parts and response_content.parts[0].text:
                     ai_text = response_content.parts[0].text.strip()
@@ -1754,7 +1906,13 @@ The system will add appropriate user-facing messages automatically.
                 else:
                     return "AI decided to respond but failed to generate text."
 
-        return "Sorry, AI agent got stuck in a thinking loop, please retry."
+        # If loop exits due to max_turns, return error message in user's language
+        loop_error_messages = {
+            'en': "Sorry, AI agent got stuck in a thinking loop. Please try rephrasing your request with a clear destination (e.g., 'Plan a 3-day trip to Tokyo').",
+            'zh': "抱歉，AI代理陷入了思考循环。请尝试用明确的目的地重新表述您的请求（例如：'规划3天东京之旅'）。",
+            'ms': "Maaf, agen AI terperangkap dalam gelung pemikiran. Sila cuba nyatakan semula permintaan anda dengan destinasi yang jelas (contoh: 'Rancang perjalanan 3 hari ke Tokyo')."
+        }
+        return loop_error_messages.get(language, loop_error_messages['en'])
 
     except Exception as e:
         print(f"--- [Chat Error] {e} ---")
