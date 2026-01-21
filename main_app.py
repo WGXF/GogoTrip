@@ -313,4 +313,4 @@ if __name__ == '__main__':
     print("  WS   /translate          - Real-time voice (premium)")
     print("=" * 60)
     
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
