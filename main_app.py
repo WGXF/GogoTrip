@@ -176,9 +176,6 @@ BACKEND_PREFIXES = (
     'api',
     'auth',
     'user',
-    'trips',      # Allow backend /trips if it exists
-    'calendar',   # Allow backend /calendar if it exists
-    'translate',  # Allow backend /translate if it exists
     'tts',
     'places',
     'chat_message',
