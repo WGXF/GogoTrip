@@ -39,26 +39,50 @@ def get_admin_dashboard_stats():
         # 5. Active subscriptions (premium users)
         total_subscriptions = User.query.filter_by(is_premium=True).count()
 
-        # 6. Monthly revenue - Calculate from subscriptions paid this month
+        # 6. Monthly revenue - Calculate from subscriptions this month
         # Include both 'active' and 'paid' status subscriptions
         current_month = datetime.now().month
         current_year = datetime.now().year
 
-        # Get all subscriptions paid this month (using payment_date)
+        # Get all subscriptions from this month
+        # Use payment_date if available, otherwise fall back to start_date or created_at
+        from sqlalchemy import or_, and_
+
         monthly_subscriptions = Subscription.query.filter(
             Subscription.status.in_(['active', 'paid']),
-            extract('month', Subscription.payment_date) == current_month,
-            extract('year', Subscription.payment_date) == current_year
+            or_(
+                # Try payment_date first
+                and_(
+                    Subscription.payment_date.isnot(None),
+                    extract('month', Subscription.payment_date) == current_month,
+                    extract('year', Subscription.payment_date) == current_year
+                ),
+                # Fall back to start_date
+                and_(
+                    Subscription.payment_date.is_(None),
+                    Subscription.start_date.isnot(None),
+                    extract('month', Subscription.start_date) == current_month,
+                    extract('year', Subscription.start_date) == current_year
+                ),
+                # Fall back to created_at
+                and_(
+                    Subscription.payment_date.is_(None),
+                    Subscription.start_date.is_(None),
+                    extract('month', Subscription.created_at) == current_month,
+                    extract('year', Subscription.created_at) == current_year
+                )
+            )
         ).all()
 
-        # Calculate revenue from plan prices
+        # Calculate revenue from subscription amount (not plan price)
         revenue_this_month = 0
         for sub in monthly_subscriptions:
-            if sub.plan and sub.plan.price:
-                revenue_this_month += float(sub.plan.price)
-            else:
-                # Fallback to default price if plan not found
-                revenue_this_month += 19.90
+            # Use the actual amount paid, not the plan price
+            revenue_this_month += float(sub.amount)
+
+        # Debug logging
+        print(f"[DEBUG] Monthly subscriptions found: {len(monthly_subscriptions)}")
+        print(f"[DEBUG] Revenue this month: RM {revenue_this_month}")
 
         # 7. Calculate growth rate (compared to last month)
         last_month = datetime.now().replace(day=1) - timedelta(days=1)
