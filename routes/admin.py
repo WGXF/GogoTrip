@@ -230,14 +230,14 @@ def handle_user_resource(user_id):
                     'required_role': 'super_admin'
                 }), 403
 
-        # 1. GET Request - 获取用户详情
+        # 1. GET Request - Get user details
         if request.method == 'GET':
             user_dict = user.to_dict()
             user_dict['role'] = target_user_role  # Normalized role
             user_dict['relatedData'] = get_user_related_data_summary(user)
             return jsonify(user_dict), 200
 
-        # 2. PUT Request - 更新用户
+        # 2. PUT Request - Update user
         if request.method == 'PUT':
             data = request.get_json()
             
@@ -936,10 +936,13 @@ def get_email_verifications():
 @login_required
 @admin_required
 def get_dashboard_stats():
-    """获取管理员仪表板统计数据"""
+    """Get admin dashboard statistics"""
     try:
+        # Get time range from query params
+        time_range = request.args.get('range', 'Last 12 Months')
+
         current_admin_role = UserRole.normalize(current_user.role)
-        
+
         # Base query - filter by permission
         if current_admin_role == UserRole.SUPER_ADMIN:
             user_query = User.query
@@ -949,51 +952,54 @@ def get_dashboard_stats():
                 ~User.role.in_([UserRole.SUPER_ADMIN, UserRole.ADMIN, 'Administrator', 'Admin'])
             )
         
-        # 1. 总用户数 (excluding soft-deleted)
+        # 1. Total users (excluding soft-deleted)
         total_users = user_query.filter(User.status != 'deleted').count()
         
-        # 2. 已验证用户数
+        # 2. Verified users count
         verified_users = user_query.filter(
             User.is_email_verified == True,
             User.status != 'deleted'
         ).count()
         
-        # 3. 总行程数
+        # 3. Total trips count
         total_trips = Trip.query.count()
         
-        # 4. 已发布文章数
+        # 4. Published articles count
         total_articles = Article.query.filter_by(status='Published').count()
         
-        # 5. 活跃订阅数（premium用户）
+        # 5. Active subscriptions count (premium users)
         total_subscriptions = Subscription.query.filter(
             Subscription.status == 'active',
             Subscription.start_date <= datetime.utcnow(),
             (Subscription.end_date == None) | (Subscription.end_date > datetime.utcnow())
         ).count()
         
-        # 6. 本月收入（假设premium月费为RM 19.90）
+        # 6. Monthly revenue - same logic as Subscription Management page
         current_month = datetime.now().month
         current_year = datetime.now().year
-        monthly_subscriptions = Subscription.query.filter(
-            Subscription.status == 'paid',
-            extract('month', Subscription.payment_date) == current_month,
-            extract('year', Subscription.payment_date) == current_year
-        ).count()
-        revenue_this_month = monthly_subscriptions * 19.90
+        month_start = datetime(current_year, current_month, 1)
+
+        # Use func.sum to calculate actual revenue from subscription amounts
+        from sqlalchemy import func
+        revenue_query = db.session.query(func.sum(Subscription.amount)).filter(
+            Subscription.status == 'active',
+            Subscription.payment_date >= month_start
+        )
+        revenue_this_month = revenue_query.scalar() or 0.0
         
-        # 7. 计算增长率（与上月相比）
+        # 7. Calculate growth rate (compared to last month)
         last_month = datetime.now().replace(day=1) - timedelta(days=1)
         last_month_start = last_month.replace(day=1)
         this_month_start = datetime.now().replace(day=1)
         
-        # 用户增长
+        # User growth
         users_last_month = user_query.filter(
             User.created_at < this_month_start,
             User.status != 'deleted'
         ).count()
         user_growth = round(((total_users - users_last_month) / users_last_month * 100), 1) if users_last_month > 0 else 0
         
-        # 验证用户增长
+        # Verified users growth
         verified_last_month = user_query.filter(
             User.is_email_verified == True,
             User.created_at < this_month_start,
@@ -1001,25 +1007,57 @@ def get_dashboard_stats():
         ).count()
         verified_growth = round(((verified_users - verified_last_month) / verified_last_month * 100), 1) if verified_last_month > 0 else 0
         
-        # 行程增长
+        # Trip growth
         trips_last_month = Trip.query.filter(
             Trip.created_at < this_month_start
         ).count()
         trip_growth = round(((total_trips - trips_last_month) / trips_last_month * 100), 1) if trips_last_month > 0 else 0
         
-        # 8. 过去12个月的用户增长图表数据
+        # 8. User growth chart data - based on time_range parameter
         chart_data = []
-        for i in range(12):
-            month_start = (datetime.now() - timedelta(days=30 * (11 - i))).replace(day=1)
-            month_end = (month_start + timedelta(days=32)).replace(day=1)
-            
-            users_in_month = user_query.filter(
-                User.created_at >= month_start,
-                User.created_at < month_end,
-                User.status != 'deleted'
-            ).count()
-            
-            chart_data.append(users_in_month)
+        now = datetime.now()
+
+        if time_range == 'Last 7 Days':
+            # Show data for last 7 days
+            for i in range(7):
+                day_start = (now - timedelta(days=6 - i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+
+                users_in_day = user_query.filter(
+                    User.created_at >= day_start,
+                    User.created_at < day_end,
+                    User.status != 'deleted'
+                ).count()
+
+                chart_data.append(users_in_day)
+
+        elif time_range == 'Last 30 Days':
+            # Show data for last 30 days
+            for i in range(30):
+                day_start = (now - timedelta(days=29 - i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+
+                users_in_day = user_query.filter(
+                    User.created_at >= day_start,
+                    User.created_at < day_end,
+                    User.status != 'deleted'
+                ).count()
+
+                chart_data.append(users_in_day)
+
+        else:  # 'Last 12 Months' (default)
+            # Show data for last 12 months
+            for i in range(12):
+                month_start = (now - timedelta(days=30 * (11 - i))).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                month_end = (month_start + timedelta(days=32)).replace(day=1)
+
+                users_in_month = user_query.filter(
+                    User.created_at >= month_start,
+                    User.created_at < month_end,
+                    User.status != 'deleted'
+                ).count()
+
+                chart_data.append(users_in_month)
         
         return jsonify({
             'totalUsers': total_users,
